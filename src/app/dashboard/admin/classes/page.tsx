@@ -33,6 +33,8 @@ interface ClassFormData {
   roomNumber: string;
   department: string;
 }
+export const dynamic = 'force-dynamic';
+
 
 export default function ManageClassesPage() {
   // --- State ---

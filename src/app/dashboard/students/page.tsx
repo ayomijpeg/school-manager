@@ -8,7 +8,9 @@ import {
 } from 'lucide-react';
 import { SchoolType } from '@prisma/client';
 import StudentActions from '@/components/students/StudentActions';
-//import ExportActions from '@/components/students/ExportActions';
+import ExportButton from '@/components/ui/export';
+import ImportActions from '@/components/ui/ImportActions';
+
 
 // --- Server Data Fetching ---
 async function getStudents(query: string) {
@@ -65,11 +67,10 @@ export default async function StudentListPage({
         </div>
         <div className="flex gap-3">
           {/* Export Button (Placeholder) */}
-          <button className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-full text-sm font-medium hover:bg-slate-50 transition-colors">
-            <FileSpreadsheet className="w-4 h-4" />
-            Export CSV
-          </button>
-          
+          <ExportButton />
+
+          <ImportActions />
+
           <Link 
             href="/dashboard/students/add" 
             className="flex items-center gap-2 px-5 py-2 bg-emerald-800 text-white rounded-full text-sm font-medium hover:bg-emerald-900 shadow-lg shadow-emerald-900/10 transition-all"

@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { ROUTES } from '@/lib/constant'; 
 import { toast } from 'sonner';
 
 export function useAuth() {

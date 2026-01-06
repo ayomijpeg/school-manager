@@ -1,36 +1,37 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyJwt } from '@/lib/auth'; // Ensure this matches your utils path
+import { verifyJwt } from '@/lib/auth'; 
 
-// Paths that do not require authentication
 const PUBLIC_PATHS = [
   '/auth/login',
   '/auth/register',
   '/auth/forgot-password',
+  '/auth/new-password', // Add this (user needs to set password after setup)
+  '/setup',             // Add this (CRITICAL: you need to create the admin account)
   '/api/auth/login',
-  '/api/auth/logout'
+  '/api/auth/logout',
+  '/api/setup'          // Allow the setup API too
 ];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 1. Skip public paths and static assets
+  // 1. Skip public paths, static assets, AND THE LANDING PAGE
   if (
+    pathname === '/' || // 🟢 FIX: Explicitly allow the landing page
     PUBLIC_PATHS.some((path) => pathname.startsWith(path)) ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
-    pathname.includes('.') // file extensions like .ico, .png
+    pathname.includes('.')
   ) {
     return NextResponse.next();
   }
 
-  // 2. Check for the Session Token (Cookie)
-  // Ensure your Login API sets a cookie named 'token' or 'session'
-  const token = req.cookies.get('token')?.value || req.cookies.get('session')?.value;
+  // 2. Check for Token
+  const token = req.cookies.get('token')?.value || req.cookies.get('session')?.value || req.cookies.get('yosola-token')?.value;
 
   // 3. Verify Token
   if (!token) {
-    // No token? Redirect to login
     return NextResponse.redirect(new URL('/auth/login', req.url));
   }
 
@@ -38,15 +39,8 @@ export async function middleware(req: NextRequest) {
     const payload = await verifyJwt(token);
     
     if (!payload) {
-      // Invalid token? Redirect to login
       return NextResponse.redirect(new URL('/auth/login', req.url));
     }
-
-    // 4. (Optional) Force Password Reset Check via Middleware
-    // If you encode 'passwordResetRequired' in your JWT, you can redirect here.
-    // if (payload.passwordResetRequired && !pathname.startsWith('/auth/new-password')) {
-    //    return NextResponse.redirect(new URL('/auth/new-password', req.url));
-    // }
 
     return NextResponse.next();
   } catch (error) {
@@ -54,7 +48,6 @@ export async function middleware(req: NextRequest) {
   }
 }
 
-// Apply to everything except specifically excluded paths
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

@@ -84,9 +84,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   // --- MENU CONFIGURATION ---
   const adminLinks = [
-    { href: ROUTES.LEVELS || '/dashboard/levels', label: 'Levels', icon: Layers },
-    { href: ROUTES.CLASSES || '/dashboard/classes', label: 'Classes', icon: School },
-    { href: ROUTES.COURSES || '/dashboard/courses', label: 'Courses', icon: BookOpen },
+    { href: ROUTES.LEVELS || '/dashboard/admin/levels', label: 'Levels', icon: Layers },
+    { href: ROUTES.CLASSES || '/dashboard/admin/classes', label: 'Classes', icon: School },
+    { href: ROUTES.COURSES || '/dashboard/admin/courses', label: 'Courses', icon: BookOpen },
     { href: ROUTES.STUDENTS || '/dashboard/students', label: 'Students', icon: GraduationCap },
     { href: ROUTES.TEACHERS || '/dashboard/teachers', label: 'Teachers', icon: Users },
     { href: ROUTES.PARENTS || '/dashboard/parents', label: 'Parents', icon: UserCircle },
@@ -129,7 +129,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           </div>
         </Link>
         {onClose && (
-          <button onClick={onClose} className="md:hidden text-slate-400 dark:text-slate-400">
+          <button title="close " onClick={onClose} className="md:hidden text-slate-400 dark:text-slate-400">
             <X className="w-5 h-5" />
           </button>
         )}

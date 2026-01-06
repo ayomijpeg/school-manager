@@ -1,26 +1,28 @@
+export const dynamic = 'force-dynamic';
+
+
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
+import { Prisma } from '@prisma/client';
 
-// 1. UPDATED SCHEMA: Matches the "Admission Page" fields
+// 1. UPDATED SCHEMA
 const createStudentSchema = z.object({
-  firstName: z.string().min(2, 'First name required'), // Form sends this
-  lastName: z.string().min(2, 'Last name required'),   // Form sends this
+  firstName: z.string().min(2, 'First name required'),
+  lastName: z.string().min(2, 'Last name required'),
   email: z.string().email().optional().or(z.literal('')), 
   levelId: z.string().uuid('Level is required'),
   departmentId: z.string().uuid().optional(),    
   dateOfBirth: z.string().optional(), 
   contactPhone: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE']).optional(),
-  // NOTE: We do NOT require 'password' or 'fullName' here. 
-  // We generate them in the function below.
 });
 
-// --- HELPER: MATRIC NUMBER GENERATOR ---
-async function generateMatricNumber(tx: any, departmentId?: string) {
+// Helper: Generate Matric Number
+async function generateMatricNumber(tx: Prisma.TransactionClient) {
   const currentYear = new Date().getFullYear();
-  let prefix = 'STU'; // You can make this dynamic later based on Dept
+  const prefix = 'STU'; 
   
   const count = await tx.student.count({
     where: {
@@ -32,15 +34,41 @@ async function generateMatricNumber(tx: any, departmentId?: string) {
   return `${currentYear}/${prefix}/${sequence}`;
 }
 
+// Helper: Generate Unique Email
+async function generateUniqueEmail(tx: Prisma.TransactionClient, firstName: string, lastName: string) {
+    const cleanFirst = firstName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanLast = lastName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const domain = 'school.local'; 
+
+    let email = `${cleanFirst}.${cleanLast}@${domain}`;
+    let isUnique = false;
+    let attempts = 0;
+
+    while (!isUnique && attempts < 10) {
+        const existingUser = await tx.user.findUnique({
+            where: { email: email }
+        });
+
+        if (!existingUser) {
+            isUnique = true;
+        } else {
+            const randomCode = Math.floor(100 + Math.random() * 900);
+            email = `${cleanFirst}.${cleanLast}${randomCode}@${domain}`;
+        }
+        attempts++;
+    }
+
+    if (!isUnique) throw new Error("Could not generate a unique email after multiple attempts.");
+    return email;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const data = createStudentSchema.parse(body);
     
-    // 2. LOGIC: Auto-generate the missing fields
     const fullName = `${data.lastName} ${data.firstName}`;
-    const defaultPassword = await bcrypt.hash(`Student@123`, 10); // Default password
-    const email = data.email || `${data.firstName}.${data.lastName}.${Date.now()}@school.local`.toLowerCase();
+    const defaultPassword = await bcrypt.hash(`Student@123`, 10);
 
     const result = await prisma.$transaction(async (tx) => {
       
@@ -52,23 +80,25 @@ export async function POST(request: Request) {
         throw new Error("No Active Academic Session found.");
       }
 
-      const matricNumber = await generateMatricNumber(tx, data.departmentId);
+      const emailToUse = data.email && data.email.length > 0 
+          ? data.email 
+          : await generateUniqueEmail(tx, data.firstName, data.lastName);
 
-      // Create User Account
+      const matricNumber = await generateMatricNumber(tx);
+
       const user = await tx.user.create({
         data: {
-          email: email,
+          email: emailToUse,
           passwordHash: defaultPassword,
           role: 'STUDENT',
           passwordResetRequired: true, 
         },
       });
 
-      // Create Student Profile
       const student = await tx.student.create({
         data: {
           userId: user.id,
-          fullName: fullName, // We calculated this above
+          fullName: fullName,
           matricNumber: matricNumber,
           levelId: data.levelId,
           departmentId: data.departmentId, 
@@ -77,7 +107,6 @@ export async function POST(request: Request) {
         },
       });
 
-      // Enroll in Default Class if available
       const defaultClass = await tx.class.findFirst({
         where: { 
             levelId: data.levelId,
@@ -97,17 +126,27 @@ export async function POST(request: Request) {
 
       return student;
     }, {
-          
-      maxWait: 5000,  // Wait 5s for connection
+      maxWait: 5000, 
       timeout: 10000,
-      });
+    });
 
     return NextResponse.json(result, { status: 201 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Create Student Error]", error);
-    if (error instanceof z.ZodError) return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
-    return NextResponse.json({ error: error.message || 'Admission failed' }, { status: 500 });
+
+    if (error instanceof z.ZodError) {
+        return NextResponse.json({ error: error.issues[0].message }, { status: 400 });
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+            return NextResponse.json({ error: 'User with this email already exists manually.' }, { status: 409 });
+        }
+    }
+
+    const errorMessage = error instanceof Error ? error.message : 'Admission failed';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -116,46 +155,44 @@ export async function GET(request: Request) {
   const search = searchParams.get('search') || '';
 
   try {
-    console.log(`[API] Searching students for: "${search}"`);
-
     const students = await prisma.student.findMany({
       where: {
-        // Only show active students
         deletedAt: null, 
-        
-        // Search Logic
         OR: search ? [
           { fullName: { contains: search, mode: 'insensitive' } },
           { matricNumber: { contains: search, mode: 'insensitive' } },
+          { user: { email: { contains: search, mode: 'insensitive' } } }
         ] : undefined,
       },
-      orderBy: { createdAt: 'desc' },
-      take: 20, // Limit to 20 for dropdown performance
+      orderBy: { createdAt: 'desc' }, 
+      take: 20, 
       
-      // Select fields needed for the dropdown (lighter query)
       select: {
         id: true,
         fullName: true,
         matricNumber: true,
-        level: { select: { name: true } },
-        department: { select: { name: true } }
+        createdAt: true,
+        
+        level: { 
+            select: { name: true } 
+        },
+        department: { 
+            select: { name: true } 
+        },
+        // CLEANED UP: Only fetching fields that definitely exist
+        user: { 
+            select: { 
+                email: true,
+                role: true
+            } 
+        }
       }
     });
 
-    console.log(`[API] Found ${students.length} students`);
     return NextResponse.json(students);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[API Error] Failed to fetch students:", error);
-    
-    // Check if it's the specific "deletedAt" error
-    if (error.message?.includes('deletedAt')) {
-        return NextResponse.json(
-            { error: "Database Schema mismatch: deletedAt field missing. Run 'npx prisma db push'" }, 
-            { status: 500 }
-        );
-    }
-    
     return NextResponse.json({ error: 'Failed to fetch students' }, { status: 500 });
   }
 }

@@ -20,9 +20,9 @@ export const ROUTES = {
   EVENTS: '/dashboard/events',
   
   // Academic Structure
-  LEVELS: '/dashboard/levels',
-  CLASSES: '/dashboard/classes',
-  COURSES: '/dashboard/courses',
+  LEVELS: '/dashboard/admin/levels',
+  CLASSES: '/dashboard/admin/classes',
+  COURSES: '/dashboard/admin/courses',
 
   // Operations
   ATTENDANCE: '/dashboard/attendance',

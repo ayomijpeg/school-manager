@@ -6,14 +6,12 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { 
   User, 
-  Calendar, 
   BookOpen, 
-  Building2, 
   Phone, 
-  Mail, 
   ArrowRight,
   CheckCircle2,
-  Loader2
+  Loader2,
+  LucideIcon // Type for the icon prop
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { SchoolType } from '@prisma/client';
@@ -27,7 +25,7 @@ type FormData = {
   dateOfBirth: string;
   gender: 'MALE' | 'FEMALE';
   levelId: string;
-  departmentId: string; // Only used for Tertiary
+  departmentId: string;
 };
 
 type ReferenceData = {
@@ -36,16 +34,22 @@ type ReferenceData = {
   schoolType: SchoolType;
 };
 
+// Interface for API Error Responses
+interface ApiError {
+  error?: string;
+  message?: string;
+  matricNumber?: string;
+}
+
 export default function AdmissionPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   
-  // Dynamic Data from DB
   const [refData, setRefData] = useState<ReferenceData>({
     levels: [],
     departments: [],
-    schoolType: 'BASIC', // Default
+    schoolType: 'BASIC',
   });
 
   const [formData, setFormData] = useState<FormData>({
@@ -62,24 +66,34 @@ export default function AdmissionPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        // PARALLEL FETCHING: Get Config, Levels, and Departments at once
+        // 🟢 FIX: Use Generics <T> instead of 'any'
+        const safeFetch = async <T,>(url: string, defaultVal: T): Promise<T> => {
+          try {
+            const res = await fetch(url);
+            if (!res.ok) {
+                console.error(`Fetch failed for ${url}: ${res.status}`);
+                return defaultVal;
+            }
+            const text = await res.text();
+            return text ? JSON.parse(text) : defaultVal;
+          } catch (err) {
+            console.error(`Error fetching ${url}:`, err);
+            return defaultVal;
+          }
+        };
+
         const [configRes, levelsRes, deptsRes] = await Promise.all([
-           // We check the setup status to know if it's Tertiary or Basic
-           fetch('/api/setup/school').then(r => r.json()), 
-           
-           // Fetch the list we just created
-           fetch('/api/levels').then(r => r.json()),
-           
-           // Fetch the departments
-           fetch('/api/departments').then(r => r.json())
+           safeFetch('/api/setup/school', { config: { schoolType: 'BASIC' as SchoolType } }), 
+           safeFetch('/api/levels', [] as { id: string; name: string }[]),
+           safeFetch('/api/departments', [] as { id: string; name: string }[])
         ]);
 
         setRefData({
-          // Safely handle if the API returns { error: ... } or empty arrays
           levels: Array.isArray(levelsRes) ? levelsRes : [],
           departments: Array.isArray(deptsRes) ? deptsRes : [],
-          schoolType: configRes?.config?.schoolType || 'BASIC' // Check how your setup API returns data
+          schoolType: configRes?.config?.schoolType || 'BASIC'
         });
+
       } catch (e) {
         console.error("Failed to load form data", e);
         toast.error("Could not load form options");
@@ -95,10 +109,10 @@ export default function AdmissionPage() {
     e.preventDefault();
     setIsLoading(true);
       try{
-     const payload = {
+      const payload = {
         ...formData,
-        departmentId: formData.departmentId || undefined, // Fixes the UUID error
-        email: formData.email || undefined,               // Fixes "Invalid email" if empty
+        departmentId: formData.departmentId || undefined,
+        email: formData.email || undefined,
         contactPhone: formData.contactPhone || undefined,
         dateOfBirth: formData.dateOfBirth || undefined,
       };
@@ -106,21 +120,22 @@ export default function AdmissionPage() {
       const res = await fetch('/api/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload), // Send the clean payload
+        body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data: ApiError = await res.json();
       
       if (!res.ok) {
-        // Log the specific error to console for debugging
         console.error("Validation Errors:", data);
         throw new Error(data.error || 'Admission failed');
       }
 
       toast.success(`Student Admitted! Matric: ${data.matricNumber}`);
       router.push('/dashboard/students'); 
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      // 🟢 FIX: Type guard for error message
+      const message = err instanceof Error ? err.message : "An unknown error occurred";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -145,13 +160,12 @@ export default function AdmissionPage() {
       >
         <h1 className="text-3xl font-serif text-slate-900 mb-2">New Student Admission</h1>
         <p className="text-slate-500">
-          Enter the student&apos;s  details to generate their matriculation number and profile.
+          Enter the student&apos;s details to generate their matriculation number and profile.
         </p>
       </motion.div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         
-        {/* SECTION 1: PERSONAL INFO */}
         <Section title="Personal Information" icon={User}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Input 
@@ -167,15 +181,15 @@ export default function AdmissionPage() {
               placeholder="e.g. Okafor"
             />
             
-            {/* Gender Select */}
             <div className="space-y-1.5">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Gender</label>
                 <div className="flex gap-4">
-                    {['MALE', 'FEMALE'].map((g) => (
+                    {(['MALE', 'FEMALE'] as const).map((g) => (
                         <button
                             key={g}
                             type="button"
-                            onClick={() => setFormData({...formData, gender: g as any})}
+                            // 🟢 FIX: Directly assign the typed value
+                            onClick={() => setFormData({...formData, gender: g})}
                             className={`flex-1 py-3 rounded-xl border font-medium text-sm transition-all ${
                                 formData.gender === g 
                                 ? 'bg-emerald-50 border-emerald-500 text-emerald-700' 
@@ -197,11 +211,9 @@ export default function AdmissionPage() {
           </div>
         </Section>
 
-        {/* SECTION 2: ACADEMIC PLACEMENT (SMART LOGIC HERE) */}
         <Section title="Academic Placement" icon={BookOpen}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            {/* 1. Level Selector (Always Visible) */}
             <Select 
                 label={isTertiary ? "Level / Year" : "Class Level"}
                 value={formData.levelId}
@@ -213,8 +225,6 @@ export default function AdmissionPage() {
                 ))}
             </Select>
 
-            {/* 2. Department Selector (Tertiary Only OR Secondary Senior) */}
-            {/* If Basic, we might show this if they have Departments (like Science/Arts) */}
             {refData.departments.length > 0 && (
                  <Select 
                     label={isTertiary ? "Department / Major" : "Department (Optional)"}
@@ -231,7 +241,6 @@ export default function AdmissionPage() {
           </div>
         </Section>
 
-        {/* SECTION 3: CONTACT */}
         <Section title="Contact Details" icon={Phone}>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Input 
@@ -266,9 +275,16 @@ export default function AdmissionPage() {
   );
 }
 
-// --- Local UI Components (Ivy & Ink Style) ---
+// --- Local UI Components ---
 
-const Section = ({ title, icon: Icon, children }: any) => (
+// 🟢 FIX: Added proper types for props instead of 'any'
+interface SectionProps {
+  title: string;
+  icon: LucideIcon;
+  children: React.ReactNode;
+}
+
+const Section = ({ title, icon: Icon, children }: SectionProps) => (
     <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
             <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-emerald-800">
@@ -280,7 +296,15 @@ const Section = ({ title, icon: Icon, children }: any) => (
     </div>
 );
 
-const Input = ({ label, value, onChange, type = "text", placeholder }: any) => (
+interface InputProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  placeholder?: string;
+}
+
+const Input = ({ label, value, onChange, type = "text", placeholder }: InputProps) => (
     <div className="space-y-1.5">
         <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">{label}</label>
         <input
@@ -293,12 +317,19 @@ const Input = ({ label, value, onChange, type = "text", placeholder }: any) => (
     </div>
 );
 
-const Select = ({ label, value, onChange, children }: any) => (
+interface SelectProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+}
+
+const Select = ({ label, value, onChange, children }: SelectProps) => (
     <div className="space-y-1.5">
         <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">{label}</label>
         <div className="relative">
             <select
-                 title="select Option"
+                 title="Select Option"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/10 transition-all appearance-none"
