@@ -1,46 +1,48 @@
 import { UserRole, AttendanceStatus, InvoiceStatus } from '@prisma/client';
 
-// ==================== API ====================
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
-// ==================== ROUTES (The "Site Map") ====================
 export const ROUTES = {
   // Public
   HOME: '/',
   LOGIN: '/auth/login',
   CHANGE_PASSWORD: '/auth/change-password',
   
-  // The "Universal" Dashboard Entry
+  // Dashboard Home
   DASHBOARD: '/dashboard',
   
-  // Core Management (Admin/Staff)
+  // --- CORE MANAGEMENT (Admin) ---
   STUDENTS: '/dashboard/students',
   TEACHERS: '/dashboard/teachers',
   PARENTS: '/dashboard/parents',
   EVENTS: '/dashboard/events',
   
-  // Academic Structure
+  // --- ACADEMIC CONFIG (Admin) ---
   LEVELS: '/dashboard/admin/levels',
   CLASSES: '/dashboard/admin/classes',
   COURSES: '/dashboard/admin/courses',
+  EXAMS: '/dashboard/admin/exams',
 
-  // Operations
+  // --- RESULTS (The Fix) ---
+  // 1. Where Teachers Enter Scores
+  RESULT_ENTRY: '/dashboard/results/entry',
+  // 2. Where Admins View Class Lists (Broadsheet)
+  ADMIN_RESULTS: '/dashboard/admin/results',
+  // 3. Where Parents View Their Child's Report
+  MY_RESULTS: '/dashboard/results', 
+
+  // --- OPERATIONS ---
   ATTENDANCE: '/dashboard/attendance',
   TIMETABLE: '/dashboard/timetable',
-  EXAMS: '/dashboard/exams',
-  RESULTS: '/dashboard/results',
   FINANCE: '/dashboard/finance',
   BILLING: '/dashboard/billing',
   
-  // User Specific (Me)
+  // --- USER SPECIFIC ---
   PROFILE: '/dashboard/profile',
   SETTINGS: '/dashboard/settings',
-  MY_TIMETABLE: '/dashboard/my/timetable',
-  MY_RESULTS: '/dashboard/my/results',
-  MY_FINANCE: '/dashboard/my/invoices',
 } as const;
 
-// ==================== ROLES & CONFIG ====================
+// ... (Keep the rest of your file exactly as is: USER_ROLES, CONFIG_DEFAULTS, etc.)
 export const USER_ROLES = [
   { value: UserRole.ADMIN, label: 'Administrator' },
   { value: UserRole.TEACHER, label: 'Academic Staff' },
@@ -54,16 +56,10 @@ export const CONFIG_DEFAULTS = {
   DATE_FORMAT: 'MMM DD, YYYY',
 } as const;
 
-// 🟢 ADDED THIS TO FIX YOUR BUILD ERROR
 export const CURRENCY = '₦';
 
-// 🟢 ADDED THIS TO FIX YOUR BUILD ERROR
 export const DEPARTMENTS = [
-  "Science",
-  "Arts",
-  "Commercial",
-  "General",
-  "Vocational"
+  "Science", "Arts", "Commercial", "General", "Vocational"
 ];
 
 export const ATTENDANCE_STATUSES = [

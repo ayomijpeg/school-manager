@@ -1,7 +1,10 @@
+export const dynamic = 'force-dynamic';
+
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
+import { Prisma } from '@prisma/client';
 
 // 1. ROBUST SCHEMA
 const createParentSchema = z.object({
@@ -66,21 +69,26 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result, { status: 201 });
 
-  } catch (error: any) {
+  // 3. SAFE ERROR HANDLING (Fixed Types)
+  } catch (error: unknown) {
     console.error("Create Parent Error:", error);
 
-    // 3. SAFE ERROR HANDLING
-    if (error.code === 'P2002') {
-      return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
+    // Handle Prisma Unique Constraint Errors (e.g. Email exists)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+            return NextResponse.json({ error: 'Email or Phone already exists' }, { status: 409 });
+        }
     }
     
+    // Handle Zod Validation Errors
     if (error instanceof z.ZodError) {
-      // Safely access the first error message
-      const msg = error.errors?.[0]?.message || 'Invalid input data';
+      // Use .issues instead of .errors to fix the TS error
+      const msg = error.issues[0]?.message || 'Invalid input data';
       return NextResponse.json({ error: msg }, { status: 400 });
     }
     
-    return NextResponse.json({ error: 'Creation failed' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Creation failed';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -109,7 +117,9 @@ export async function GET(request: Request) {
       take: 50,
     });
     return NextResponse.json(parents);
-  } catch (e) {
+  } catch (error) {
+    // FIX: Log the error so it is 'used' to satisfy ESLint
+    console.error("Fetch Parents Error:", error);
     return NextResponse.json({ error: "Failed to fetch parents" }, { status: 500 });
   }
 }

@@ -1,14 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
-import TeacherForm from './TeacherForm'; // Reuse the form we made earlier
-import { useEffect } from 'react';
+import TeacherForm from './TeacherForm'; 
 
 export default function AddTeacherButton() {
   const [isOpen, setIsOpen] = useState(false);
-  const [departments, setDepartments] = useState([]);
+  const [departments, setDepartments] = useState<any[]>([]); 
 
   // Fetch departments when modal opens
   useEffect(() => {

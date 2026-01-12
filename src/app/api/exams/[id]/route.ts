@@ -1,58 +1,60 @@
-// src/app/api/exams/[id]/route.ts
 import { prisma } from '@/lib/prisma';
 import { NextResponse, NextRequest } from 'next/server';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 
-// 1. Zod schema for UPDATING an exam (all fields optional)
+// 1. Zod schema for UPDATING (with Empty String Safety)
 const updateExamSchema = z.object({
-  name: z
-    .string()
-    .min(3, 'Exam name is required (e.g., "Term 1 Midterm")')
-    .optional(),
-  academicYear: z.string().min(4, 'Academic Year is required').optional(),
-  startDate: z.string().date().optional().nullable(),
-  endDate: z.string().date().optional().nullable(),
+  name: z.string().min(3).optional(),
+  academicYear: z.string().min(4).optional(),
+  
+  // FIX: Handle "" from forms by converting to undefined
+  startDate: z.preprocess(
+    (arg) => (arg === '' ? undefined : arg), 
+    z.string().date().optional().nullable()
+  ),
+  
+  endDate: z.preprocess(
+    (arg) => (arg === '' ? undefined : arg), 
+    z.string().date().optional().nullable()
+  ),
 });
 
-// --- GET A SINGLE EXAM (GET) ---
+// --- GET A SINGLE EXAM ---
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> } // Updated for Next.js 15+ types if needed
 ) {
   try {
+    const { id } = await params; // Await params in newer Next.js versions
     const exam = await prisma.exam.findUniqueOrThrow({
-      where: { id: params.id },
+      where: { id },
     });
     return NextResponse.json(exam, { status: 200 });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2025') {
-        return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
-      }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
-    console.error(error);
-    return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-// --- UPDATE A SINGLE EXAM (PUT) ---
+// --- UPDATE A SINGLE EXAM ---
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const data = updateExamSchema.parse(body);
 
     const updatedExam = await prisma.exam.update({
-      where: { id: params.id },
+      where: { id },
       data: {
-        ...data,
-        // Handle date conversion if it was sent
+        name: data.name,
+        academicYear: data.academicYear,
+        // Safe conversion: only convert if data exists
         startDate: data.startDate ? new Date(data.startDate) : undefined,
         endDate: data.endDate ? new Date(data.endDate) : undefined,
       },
@@ -61,46 +63,31 @@ export async function PUT(
     return NextResponse.json(updatedExam, { status: 200 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'Invalid input', details: error.issues }, { status: 400 });
     }
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2025') {
-        return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
-      }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
-    console.error(error);
-    return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 },
-    );
+    console.error("Update Exam Error:", error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-// --- DELETE A SINGLE EXAM (DELETE) ---
+// --- DELETE A SINGLE EXAM ---
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await prisma.exam.delete({
-      where: { id: params.id },
+      where: { id },
     });
-
-    // Return a 204 No Content response, standard for DELETE
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2025') {
-        return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
-      }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
-    console.error(error);
-    return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

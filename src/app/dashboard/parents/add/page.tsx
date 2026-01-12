@@ -14,7 +14,7 @@ export default function AddParentPage() {
       </div>
 
       {/* Render form without initial data = Create Mode */}
-      <EditParentForm />
+     <EditParentForm initialData={null} />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { useDataFetch } from '@/hooks/useDataFetch';
 import { classApi, levelApi } from '@/lib/api';
 import { Level, Class, Department } from '@prisma/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner'; // Using Sonner
+import { toast } from 'sonner';
 import { DEPARTMENTS } from '@/lib/constant';
 
 // Icons
@@ -23,6 +23,9 @@ import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 
+// 🟢 CRITICAL: Prevents build errors by skipping static generation for this page
+export const dynamic = 'force-dynamic';
+
 interface ClassWithLevel extends Class {
   level: { name: string };
 }
@@ -33,8 +36,6 @@ interface ClassFormData {
   roomNumber: string;
   department: string;
 }
-export const dynamic = 'force-dynamic';
-
 
 export default function ManageClassesPage() {
   // --- State ---
@@ -181,7 +182,6 @@ export default function ManageClassesPage() {
               <TableHeader className="bg-gray-50/50">
                 <TableRow>
                   <TableHead>Class Name</TableHead>
-                  <TableHead>Level</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead>Room</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -198,25 +198,26 @@ export default function ManageClassesPage() {
                       transition={{ delay: idx * 0.03 }}
                       className="group border-b border-gray-100 hover:bg-gray-50/80 transition-colors"
                     >
-                      <TableCell className="font-medium text-gray-900">{cls.name}</TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-100 text-xs font-medium text-gray-700">
-                          {cls.level.name}
-                        </span>
+                      {/* 🟢 Improved: Shows "JSS 1 A" instead of just "A" */}
+                      <TableCell className="font-medium text-gray-900">
+                         {cls.level.name} <span className="text-gray-400 mx-1">/</span> {cls.name}
                       </TableCell>
+                      
                       <TableCell>
-                         {cls.department ? (
-                           <Badge variant={cls.department === 'SCIENCE' ? 'info' : cls.department === 'ARTS' ? 'warning' : 'default'}>
-                             {cls.department}
-                           </Badge>
-                         ) : <span className="text-gray-400 italic text-sm">General</span>}
+                          {cls.department ? (
+                            <Badge variant={cls.department === 'SCIENCE' ? 'info' : cls.department === 'ARTS' ? 'warning' : 'default'}>
+                              {cls.department}
+                            </Badge>
+                          ) : <span className="text-gray-400 italic text-sm">General</span>}
                       </TableCell>
+                      
                       <TableCell className="text-gray-500 text-sm">{cls.roomNumber || '-'}</TableCell>
+                      
                       <TableCell className="text-right">
-                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="sm" icon={Edit} onClick={() => openEditModal(cls)} />
-                            <Button variant="ghost" size="sm" icon={Trash2} className="text-red-600 hover:bg-red-50" onClick={() => { setCurrentClass(cls); setIsDeleteModalOpen(true); }} />
-                         </div>
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <Button variant="ghost" size="sm" icon={Edit} onClick={() => openEditModal(cls)} />
+                             <Button variant="ghost" size="sm" icon={Trash2} className="text-red-600 hover:bg-red-50" onClick={() => { setCurrentClass(cls); setIsDeleteModalOpen(true); }} />
+                          </div>
                       </TableCell>
                     </motion.tr>
                   ))}
@@ -247,7 +248,15 @@ export default function ManageClassesPage() {
       <Modal isOpen={isFormModalOpen} onClose={closeFormModal} title={modalMode === 'add' ? "New Class" : "Edit Class"}>
         <form onSubmit={handleFormSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Class Name (e.g. A)" name="name" value={formData.name} onChange={handleChange} required placeholder="A" />
+            <Input 
+                label="Class Arm (e.g. A, B, Gold)" 
+                name="name" 
+                value={formData.name} 
+                onChange={handleChange} 
+                required 
+                placeholder="A" 
+                autoComplete="off" 
+            />
             <Select 
               label="Level" 
               name="levelId" 
@@ -258,14 +267,21 @@ export default function ManageClassesPage() {
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <Select 
+              <Select 
               label="Department (Optional)" 
               name="department" 
               value={formData.department} 
               onChange={handleChange} 
               options={[{ value: '', label: 'None' }, ...departmentOptions]} 
             />
-            <Input label="Room No. (Optional)" name="roomNumber" value={formData.roomNumber} onChange={handleChange} placeholder="101" />
+            <Input 
+                label="Room No. (Optional)" 
+                name="roomNumber" 
+                value={formData.roomNumber} 
+                onChange={handleChange} 
+                placeholder="101" 
+                autoComplete="off" 
+            />
           </div>
           
           <div className="flex justify-end gap-3 pt-4 mt-4 border-t">
@@ -278,7 +294,7 @@ export default function ManageClassesPage() {
       <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Delete Class">
          <div className="text-center space-y-4">
             <div className="mx-auto bg-red-100 h-12 w-12 rounded-full flex items-center justify-center text-red-600"><AlertTriangle /></div>
-            <p>Are you sure you want to delete <strong>{currentClass?.name}</strong>? This cannot be undone.</p>
+            <p>Are you sure you want to delete <strong>{currentClass?.level.name} {currentClass?.name}</strong>? This cannot be undone.</p>
             <div className="flex justify-center gap-3">
                <Button variant="secondary" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
                <Button variant="danger" onClick={handleDelete} isLoading={isSubmitting}>Delete</Button>

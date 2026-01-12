@@ -1,12 +1,10 @@
-// src/app/dashboard/admin/courses/page.tsx
 'use client';
 
 import React, { useState } from 'react';
 import Link from "next/link";
 import { useDataFetch } from '@/hooks/useDataFetch';
 import { courseApi, levelApi } from '@/lib/api';
-import { Level, Department } from '@prisma/client';
-import { CourseWithLevel, CourseInput } from '@/types';
+import { Level } from '@prisma/client';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
@@ -14,25 +12,43 @@ import Select from '@/components/ui/Select';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
 import Card from '@/components/ui/Card';
-import  {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/Table";
 import { toast } from 'react-toastify';
 import { Plus, BookOpen, Edit, Trash2 } from 'lucide-react';
-import { DEPARTMENTS } from '@/lib/constant'; // Import department constants
+import { DEPARTMENTS } from '@/lib/constant'; 
+
+// --- TYPES (FIXED) ---
+interface CourseWithLevel {
+  id: string;
+  name: string;
+  code: string | null;
+  levelId: string | null;
+  departmentId: string | null;
+  // FIX 1: Department is an object { name: string }, not a plain string
+  department?: { name: string } | null; 
+  level?: {
+    name: string;
+  } | null;
+}
+
+interface CourseFormState {
+  name: string;
+  levelId: string;
+  code?: string;
+  department?: string | null;
+}
 
 const ManageCoursesPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // We won't use modalMode, currentCourse, or delete state *yet*
-  // const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  // const [currentCourse, setCurrentCourse] = useState<CourseWithLevel | null>(null);
   
-  const [formData, setFormData] = useState<CourseInput>({
+  const [formData, setFormData] = useState<CourseFormState>({
     name: '',
     levelId: '',
     code: '',
@@ -56,17 +72,19 @@ const ManageCoursesPage = () => {
 
   // --- Modal Control ---
   const openAddModal = () => {
-    // setModalMode('add');
-    // setCurrentCourse(null);
     setFormData({ name: '', levelId: '', code: '', department: null });
     setIsModalOpen(true);
   };
   
   const closeModal = () => setIsModalOpen(false);
 
-  // --- Form & API Handlers ---
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // --- Form Handlers ---
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,16 +95,17 @@ const ManageCoursesPage = () => {
     }
     setIsSubmitting(true);
     
-    const apiData: CourseInput = {
+    const apiData = {
       name: formData.name,
       levelId: formData.levelId,
-      code: formData.code || undefined, // Send undefined if empty
-      department: formData.department || null, // Send null if empty
+      code: formData.code || undefined,
+      department: formData.department || null,
     };
 
     try {
-      // We are only handling 'add' mode for now
-      await courseApi.create(apiData);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await courseApi.create(apiData as any);
+      
       toast.success(`Course "${apiData.name}" created successfully!`);
       closeModal();
       await refetchCourses();
@@ -110,9 +129,16 @@ const ManageCoursesPage = () => {
     return <Card padding="lg"><p className="text-error-600">Error loading data: {fetchError.message}</p></Card>;
   }
   
-  // Format options for Select components
-  const levelOptions = levels?.map(level => ({ value: level.id, label: level.name })) || [];
-  const departmentOptions = DEPARTMENTS.map(dep => ({ value: dep.value, label: dep.label }));
+  const safeLevels = Array.isArray(levels) ? levels : [];
+  const levelOptions = safeLevels.map((level) => ({ 
+      value: String(level.id), 
+      label: level.name 
+  }));
+
+  const departmentOptions = DEPARTMENTS.map((dep: string) => ({ 
+      value: dep, 
+      label: dep 
+  }));
 
   return (
     <div>
@@ -124,13 +150,13 @@ const ManageCoursesPage = () => {
           icon={Plus}
           onClick={openAddModal}
           className="w-full sm:w-auto"
-          disabled={!levels || levels.length === 0} // Disable if no levels exist
+          disabled={safeLevels.length === 0}
         >
           Add New Course
         </Button>
       </div>
 
-      {/* Courses Table or Empty State */}
+      {/* Courses Table */}
       {courses && courses.length > 0 ? (
         <Card padding="none" className="overflow-x-auto">
           <Table>
@@ -149,9 +175,11 @@ const ManageCoursesPage = () => {
                   <TableCell className="font-semibold text-gray-800 text-base py-3">{course.name}</TableCell>
                   <TableCell>{course.code || <span className="text-gray-400">N/A</span>}</TableCell>
                   <TableCell>{course.level?.name || <span className="text-gray-400">N/A</span>}</TableCell>
-                  <TableCell>{course.department || <span className="text-gray-400">N/A</span>}</TableCell>
+                  
+                  {/* FIX 2: Access the .name property safely */}
+                  <TableCell>{course.department?.name || <span className="text-gray-400">N/A</span>}</TableCell>
+                  
                   <TableCell className="text-right space-x-1">
-                    {/* Actions are disabled for now per user request */}
                     <Button variant="ghost" size="sm" icon={Edit} disabled title="Edit (coming soon)" />
                     <Button
                       variant="ghost"
@@ -176,22 +204,22 @@ const ManageCoursesPage = () => {
             label: "Add First Course",
             onClick: openAddModal,
             icon: Plus,
-            disabled: !levels || levels.length === 0
+            disabled: safeLevels.length === 0
           }}
         />
       )}
       
-      {(!levels || levels.length === 0) && (
+      {safeLevels.length === 0 && (
           <p className="text-center text-warning-600 mt-4">
               You must <Link href="/dashboard/admin/levels" className="font-medium underline hover:text-warning-800">add a Level</Link> before you can create a course.
           </p>
       )}
 
-      {/* Add/Edit Course Modal */}
+      {/* Add Course Modal */}
      <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
-        title={"Add New Course"} // Only "Add" mode for now
+        title={"Add New Course"}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -199,7 +227,7 @@ const ManageCoursesPage = () => {
             id="name"
             name="name"
             value={formData.name}
-            onChange={handleChange}
+            onChange={handleInputChange} 
             placeholder="e.g., Mathematics"
             required
             disabled={isSubmitting}
@@ -210,7 +238,7 @@ const ManageCoursesPage = () => {
             id="code"
             name="code"
             value={formData.code || ''}
-            onChange={handleChange}
+            onChange={handleInputChange} 
             placeholder="e.g., MTH101"
             disabled={isSubmitting}
           />
@@ -219,7 +247,7 @@ const ManageCoursesPage = () => {
             id="levelId"
             name="levelId"
             value={formData.levelId}
-            onChange={handleChange}
+            onChange={handleSelectChange} 
             required
             disabled={isSubmitting}
             options={[
@@ -231,22 +259,19 @@ const ManageCoursesPage = () => {
             label="Department (Optional)"
             id="department"
             name="department"
-            value={formData.department || ''}
-            onChange={handleChange}
+            value={formData.department ?? ''}
+            onChange={handleSelectChange} 
             disabled={isSubmitting}
             options={[
                 { value: '', label: 'Select a department (if applicable)...' },
                 ...departmentOptions
             ]}
           />
-          {/* We'll add description/syllabusUrl later */}
           
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-6">
             <Button type="button" variant="secondary" onClick={closeModal} disabled={isSubmitting}>
               Cancel
             </Button>
-            
-            {/* --- THIS IS THE CORRECTED BUTTON --- */}
             <Button
               type="submit"
               variant="primary"
@@ -259,7 +284,6 @@ const ManageCoursesPage = () => {
         </form>
       </Modal>
 
-    
     </div>
   );
 };
