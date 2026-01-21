@@ -157,29 +157,28 @@ export async function GET(request: Request) {
   try {
     const students = await prisma.student.findMany({
       where: {
-        deletedAt: null, 
+        deletedAt: null,
         OR: search ? [
           { fullName: { contains: search, mode: 'insensitive' } },
-          { matricNumber: { contains: search, mode: 'insensitive' } },
+          { matricNumber: { contains: search, mode: 'insensitive' } }, // 🟢 Allows searching by ID
           { user: { email: { contains: search, mode: 'insensitive' } } }
         ] : undefined,
       },
-      orderBy: { createdAt: 'desc' }, 
-      take: 20, 
+      orderBy: { createdAt: 'desc' },
+      take: 20,
       
       select: {
         id: true,
         fullName: true,
-        matricNumber: true,
+        matricNumber: true, // 🟢 Required by frontend
         createdAt: true,
         
         level: { 
-            select: { name: true } 
+            select: { name: true } // 🟢 Required for the dropdown class display
         },
         department: { 
             select: { name: true } 
         },
-        // CLEANED UP: Only fetching fields that definitely exist
         user: { 
             select: { 
                 email: true,

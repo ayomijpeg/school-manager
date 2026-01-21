@@ -1,69 +1,77 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// Helper for Params
+// 🔴 FIX: Define types locally instead of importing from Prisma
+// (This fixes the error if your DB schema uses Strings instead of Enums)
+type EventCategory = 'GENERAL' | 'ACADEMIC' | 'SPORTS' | 'HOLIDAY';
+type EventAudience = 'ALL' | 'STUDENTS' | 'PARENTS' | 'TEACHERS';
+
+// Helper for Next.js Dynamic Route Params
 type Props = { params: Promise<{ id: string }> };
 
-// 1. Define what we receive from the Frontend
+// 1. Define what we receive from the Frontend (Input)
 interface IncomingEventBody {
   title?: string;
   description?: string;
-  startTime?: string;
-  endTime?: string;
+  startTime?: string; // ISO String from JSON
+  endTime?: string;   // ISO String from JSON
   location?: string;
-  category?: string;
-  audience?: string;
-  date?: string; // This is the field we must strip out
+  category?: EventCategory;
+  audience?: EventAudience;
+  date?: string;      // ⚠️ We must strip this out
 }
 
-// 2. Define what we send to the Database (Prisma)
+// 2. Define what we send to Prisma (Output)
 interface DatabaseUpdateData {
   title?: string;
   description?: string;
-  startTime?: Date;
-  endTime?: Date;
+  startTime?: Date;   // Converted Date Object
+  endTime?: Date;     // Converted Date Object
   location?: string;
-  category?: string;
-  audience?: string;
+  category?: EventCategory;
+  audience?: EventAudience;
 }
 
-// DELETE
+// DELETE Operation
 export async function DELETE(_request: Request, props: Props) {
   try {
     const { id } = await props.params;
-    await prisma.event.delete({ where: { id } });
+
+    await prisma.event.delete({ 
+        where: { id } 
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Delete failed:", error);
-    return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete event" }, { status: 500 });
   }
 }
 
-// PATCH
+// PATCH Operation (Update)
 export async function PATCH(request: Request, props: Props) {
   try {
     const { id } = await props.params;
     const body: IncomingEventBody = await request.json();
 
-    // 3. Construct the clean object manually (Best practice for Type Safety)
-    // This avoids using 'delete' on an 'any' object
+    // 3. Manually construct the clean update object.
     const dataToUpdate: DatabaseUpdateData = {};
 
     if (body.title) dataToUpdate.title = body.title;
-    if (body.description) dataToUpdate.description = body.description;
+    if (body.description !== undefined) dataToUpdate.description = body.description;
     if (body.location) dataToUpdate.location = body.location;
-    if (body.category) dataToUpdate.category = body.category;
-    if (body.audience) dataToUpdate.audience = body.audience;
     
-    // Convert ISO strings to Date objects
+    // Cast strict types if your DB expects strings or Enums
+    if (body.category) dataToUpdate.category = body.category as EventCategory;
+    if (body.audience) dataToUpdate.audience = body.audience as EventAudience;
+    
+    // Convert ISO strings to Date objects for Prisma
     if (body.startTime) {
         dataToUpdate.startTime = new Date(body.startTime);
     }
     if (body.endTime) {
         dataToUpdate.endTime = new Date(body.endTime);
     }
-
-    // Note: We intentionally ignore 'body.date' here, so it never touches Prisma.
 
     const updatedEvent = await prisma.event.update({
       where: { id },

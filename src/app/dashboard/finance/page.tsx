@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
-import { Wallet, AlertCircle, CheckCircle2, LucideIcon, Search, ClipboardCheck } from 'lucide-react';
+import { Wallet, AlertCircle, CheckCircle2, LucideIcon, Search, ClipboardCheck, Printer } from 'lucide-react';
 import InvoiceGenerator from '@/components/finance/InvoiceGenerator';
 import InvoiceList from '@/components/finance/InvoiceList'; 
 import PaymentSettingsModal from '@/components/finance/PaymentSettingsModal';
@@ -10,9 +10,7 @@ import { formatCurrency } from '@/lib/utils';
 // Define Props for SearchParams (Next.js 15 Standard)
 type SearchParams = Promise<{ page?: string; query?: string }>;
 
-interface PaymentSettingsModalProps {
-  initialConfig?: any; 
-}
+// 🔴 REMOVED: Unused Interface 'PaymentSettingsModalProps' was causing both errors.
 
 export default async function FinancePage({ searchParams }: { searchParams: SearchParams }) {
   // 1. Parse URL Params
@@ -30,7 +28,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
     ]
   } : {};
 
-  // 3. Fetch Data in Parallel (Added Pending Payments Count)
+  // 3. Fetch Data in Parallel
   const [rawInvoices, totalCount, stats, levels, config, pendingCount] = await Promise.all([
     // A. Fetch Paginated Invoices
     prisma.invoice.findMany({
@@ -51,7 +49,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
     // D. Dropdown Data
     prisma.level.findMany({ orderBy: { name: 'asc' } }),
     prisma.schoolConfig.findFirst(),
-    // E. NEW: Count Pending Payments for the Badge
+    // E. Count Pending Payments for Badge
     prisma.payment.count({ where: { status: 'PENDING' } })
   ]);
 
@@ -78,7 +76,17 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
         </div>
         
         <div className="flex items-center gap-3">
-           {/* NEW: Verify Payments Button with Badge */}
+            {/* PRINT BUTTON (New) */}
+            <Link 
+                href={`/dashboard/finance/print?query=${query}`} 
+                target="_blank" 
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white font-bold rounded-xl text-sm hover:bg-slate-800 transition-all shadow-sm"
+            >
+                <Printer size={18} />
+                <span className="hidden md:inline">Print List</span>
+            </Link>
+
+           {/* VERIFY BUTTON */}
            <Link 
              href="/dashboard/finance/verification"
              className="relative flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm group"

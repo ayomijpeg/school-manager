@@ -2,10 +2,13 @@ import React from 'react';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { AlertCircle, ArrowLeft, Calendar, CreditCard, CheckCircle } from 'lucide-react';
-import VerifyPayment from '@/components/finance/VerifyPayment';
-import RefreshButton from '@/components/ui/RefreshButton'; // <--- Import it
+import VerifyPayment from '@/components/finance/VerifyPayment'; // 🟢 Ensure this file exists (Step 2)
+import RefreshButton from '@/components/ui/RefreshButton';
+
+export const dynamic = 'force-dynamic'; // Ensures data is always fresh
 
 export default async function PaymentVerificationPage() {
+  // Fetch only Pending payments
   const pendingPayments = await prisma.payment.findMany({
     where: { status: 'PENDING' },
     include: {
@@ -26,7 +29,7 @@ export default async function PaymentVerificationPage() {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Link 
-              href="/dashboard/admin/finance" 
+              href="/dashboard/finance" 
               className="text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1 text-xs font-bold uppercase tracking-wider"
             >
               <ArrowLeft size={12} /> Back to Ledger
@@ -37,7 +40,6 @@ export default async function PaymentVerificationPage() {
         </div>
         
         <div className="flex items-center gap-3">
-          {/* THE NEW REFRESH BUTTON */}
           <RefreshButton /> 
 
           <div className="px-4 py-2 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold border border-amber-100 flex items-center gap-2 shadow-sm">
@@ -47,16 +49,26 @@ export default async function PaymentVerificationPage() {
         </div>
       </div>
 
-      {/* TABLE CONTENT ... (Rest of your code remains the same) */}
+      {/* TABLE CONTENT */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden min-h-[400px]">
-        {/* ... table code ... */}
         <table className="w-full text-left border-collapse">
-          {/* ... */}
-            <tbody className="divide-y divide-slate-100">
+          {/* 🟢 ADDED TABLE HEADERS */}
+          <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase font-bold text-slate-500">
+            <tr>
+              <th className="px-6 py-4 w-40">Date Logged</th>
+              <th className="px-6 py-4">Student Details</th>
+              <th className="px-6 py-4">Payment Ref</th>
+              <th className="px-6 py-4">Amount</th>
+              <th className="px-6 py-4 text-right">Action</th>
+            </tr>
+          </thead>
+          
+          <tbody className="divide-y divide-slate-100">
             {pendingPayments.map((pay) => (
               <tr key={pay.id} className="group hover:bg-slate-50/50 transition-colors">
-                 {/* ... table rows ... */}
-                 <td className="px-6 py-4">
+                
+                {/* 1. Date Column */}
+                <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
                         <Calendar size={16} />
@@ -66,12 +78,13 @@ export default async function PaymentVerificationPage() {
                             {new Date(pay.paymentDate).toLocaleDateString()}
                         </p>
                         <p className="text-[10px] text-slate-400">
-                            Logged: {new Date(pay.createdAt).toLocaleDateString()}
+                            Time: {new Date(pay.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                     </div>
                   </div>
                 </td>
 
+                {/* 2. Student Column */}
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs">
@@ -83,37 +96,41 @@ export default async function PaymentVerificationPage() {
                             <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] font-bold">
                                 {pay.invoice.student.level?.name || 'N/A'}
                             </span>
-                            <span>#{pay.invoice.invoiceNumber}</span>
+                            <span>Invoice #{pay.invoice.invoiceNumber}</span>
                         </div>
                     </div>
                   </div>
                 </td>
 
+                {/* 3. Reference Column */}
                 <td className="px-6 py-4">
                   <div className="flex items-start gap-2">
                     <CreditCard size={14} className="mt-0.5 text-slate-400" />
                     <div>
-                        <p className="text-xs font-bold text-slate-700 break-all">
-                            {pay.reference || 'No Ref Provided'}
+                        <p className="text-xs font-bold text-slate-700 break-all font-mono">
+                            {pay.reference || 'Manual Entry'}
                         </p>
                         <p className="text-[10px] text-slate-500 uppercase font-medium">
-                            {pay.paymentMethod || 'Unknown Method'}
+                            Method: {pay.paymentMethod || 'Unknown'}
                         </p>
                     </div>
                   </div>
                 </td>
 
+                {/* 4. Amount Column */}
                 <td className="px-6 py-4">
-                  <span className="text-sm font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
+                  <span className="text-sm font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
                     ₦ {Number(pay.amountPaid).toLocaleString()}
                   </span>
                 </td>
 
+                {/* 5. Action Column (Buttons) */}
                 <td className="px-6 py-4 text-right">
                   <VerifyPayment paymentId={pay.id} />
                 </td>
               </tr>
             ))}
+
             {/* Empty State */}
             {pendingPayments.length === 0 && (
                 <tr>
@@ -128,7 +145,7 @@ export default async function PaymentVerificationPage() {
                     </td>
                 </tr>
             )}
-            </tbody>
+          </tbody>
         </table>
       </div>
     </div>
