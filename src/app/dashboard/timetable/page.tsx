@@ -3,7 +3,7 @@ import { getCurrentUser } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import Timetable from '@/components/parents/Timetable';
-import { CalendarDays, Clock, Info } from 'lucide-react';
+import { CalendarDays,  Info } from 'lucide-react';
 
 export default async function TimetablePage() {
   const user = await getCurrentUser();
@@ -41,7 +41,9 @@ export default async function TimetablePage() {
         {/* Child Selector (Simplified for now) */}
         <div className="flex items-center gap-2 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
           <span className="text-xs font-bold text-slate-400 px-2 uppercase">Ward:</span>
-          <select className="bg-transparent text-sm font-bold outline-none dark:text-white cursor-pointer">
+          <select 
+           aria-label="Select Timetable View"
+          className="bg-transparent text-sm font-bold outline-none dark:text-white cursor-pointer">
             {wards.map(w => (
               <option key={w.id} value={w.id}>{w.fullName}</option>
             ))}

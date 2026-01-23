@@ -8,7 +8,7 @@ import { ROUTES } from '@/lib/constant'; // Imported fixed routes
 import {
   LayoutDashboard, Layers, School, BookOpen, GraduationCap, Users, UserCircle,
   Calendar, FileText, Receipt, ClipboardCheck, Award, Settings, LogOut,
-  ChevronRight, X, Building2, ClipboardList, FileBadge, LucideIcon, BarChart3
+  ChevronRight, X, Building2, ClipboardList, FileBadge, LucideIcon, BarChart3,CalendarDays
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -66,7 +66,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     { href: ROUTES.STUDENTS, label: 'Students', icon: GraduationCap },
     { href: ROUTES.TEACHERS, label: 'Teachers', icon: Users },
     { href: ROUTES.PARENTS, label: 'Parents', icon: UserCircle },
-    // 🟢 SPLIT RESULTS FOR ADMIN: Entry vs View
     { href: ROUTES.RESULT_ENTRY, label: 'Result Entry', icon: ClipboardList }, 
     { href: ROUTES.ADMIN_RESULTS, label: 'Broadsheet', icon: BarChart3 }, 
     { href: ROUTES.EVENTS, label: 'Events', icon: Calendar },
@@ -77,9 +76,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   ];
   
   const teacherLinks = [
-    { href: '/dashboard/my-classes', label: 'My Classes', icon: School },
-    { href: ROUTES.ATTENDANCE, label: 'Attendance', icon: ClipboardCheck },
-    { href: ROUTES.RESULT_ENTRY, label: 'Enter Results', icon: FileText }, // Teachers enter results
+    { href: '/dashboard/teachers/classes', label: 'My Classes', icon: School },
+    { href:'/dashboard/teachers/attendance', label: 'Attendance', icon: ClipboardCheck },
+    { href: '/dashboard/teachers/results', label: 'Enter Results', icon: FileText }, // Teachers enter results
+    { href: '/dashboard/teachers/timetable', label: 'My Schedule', icon: CalendarDays },
+    
   ];
   
   const studentParentLinks = [
@@ -107,7 +108,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           </div>
         </Link>
         {onClose && (
-          <button onClick={onClose} className="md:hidden text-slate-400">
+          <button
+           aria-label="Close Sidebar"
+          onClick={onClose} className="md:hidden text-slate-400">
             <X className="w-5 h-5" />
           </button>
         )}

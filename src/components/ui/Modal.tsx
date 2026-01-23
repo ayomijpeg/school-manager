@@ -85,7 +85,8 @@ export default function Modal({
                 )}
                 {showCloseButton && (
                   <button
-                  type="button"
+                   aria-label="Close Modal"
+                   type="button"
                     onClick={onClose}
                     className="ml-auto w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors shadow-sm"
                   >

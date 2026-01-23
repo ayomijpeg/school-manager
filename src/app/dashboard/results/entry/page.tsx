@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // For navigation
-import { toast } from 'react-toastify';
+// Removed unused 'Link' and 'useRouter' imports
+import { toast } from 'react-toastify'; // Ensure you have react-toastify or use sonner
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import CsvResultUploader from '@/components/results/CsvResultUploader';
@@ -18,7 +17,7 @@ import {
   BookOpen, 
   FileBadge,
   CheckCircle2,
-  ArrowRight,
+  // Removed ArrowRight
   Printer,
   RotateCcw
 } from 'lucide-react';
@@ -42,7 +41,7 @@ interface DropdownItem {
 }
 
 export default function ResultEntryPage() {
-  const router = useRouter();
+  // Removed unused router
 
   // --- STATE ---
   const [selectedLevel, setSelectedLevel] = useState('');
@@ -80,12 +79,12 @@ export default function ResultEntryPage() {
     return (
         <div className="p-8 max-w-4xl mx-auto min-h-screen flex items-center">
              <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center space-y-8 shadow-sm">
-                {/* ... (Keep existing Empty State UI) ... */}
                 <h2 className="text-2xl font-bold text-amber-900">Academic Setup Required</h2>
                 <div className="flex justify-center gap-4">
-                     <Link href="/dashboard/admin/levels"><Button variant="secondary">Create Level</Button></Link>
-                     <Link href="/dashboard/admin/courses"><Button variant="secondary">Create Subject</Button></Link>
-                     <Link href="/dashboard/admin/exams"><Button variant="secondary">Create Exam</Button></Link>
+                     {/* Using regular anchor tags or Links if needed, assuming Button handles navigation or wrapped */}
+                     <Button variant="secondary" onClick={() => window.location.href='/dashboard/admin/levels'}>Create Level</Button>
+                     <Button variant="secondary" onClick={() => window.location.href='/dashboard/admin/courses'}>Create Subject</Button>
+                     <Button variant="secondary" onClick={() => window.location.href='/dashboard/admin/exams'}>Create Exam</Button>
                 </div>
             </div>
         </div>
@@ -219,14 +218,18 @@ export default function ResultEntryPage() {
         </div>
       </div>
 
-      {/* FILTER BAR (Keep existing code) */}
+      {/* FILTER BAR */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-        {/* ... (Keep your Select Inputs exactly as they were) ... */}
         
         {/* Level Select */}
         <div className="space-y-1">
           <label className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1"><Layers size={14} className="text-gray-400"/> Level</label>
-          <select className="w-full border border-gray-300 p-2 rounded-lg bg-white" value={selectedLevel} onChange={e => setSelectedLevel(e.target.value)}>
+          <select 
+            aria-label="Select Level" // ✅ Accessibility Fix
+            className="w-full border border-gray-300 p-2 rounded-lg bg-white" 
+            value={selectedLevel} 
+            onChange={e => setSelectedLevel(e.target.value)}
+          >
             <option value="">Select Level...</option>
             {levels?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
@@ -235,7 +238,12 @@ export default function ResultEntryPage() {
         {/* Subject Select */}
         <div className="space-y-1">
           <label className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1"><BookOpen size={14} className="text-gray-400"/> Subject</label>
-          <select className="w-full border border-gray-300 p-2 rounded-lg bg-white" value={selectedCourse} onChange={e => setSelectedCourse(e.target.value)}>
+          <select 
+            aria-label="Select Subject" // ✅ Accessibility Fix
+            className="w-full border border-gray-300 p-2 rounded-lg bg-white" 
+            value={selectedCourse} 
+            onChange={e => setSelectedCourse(e.target.value)}
+          >
             <option value="">Select Subject...</option>
             {courses?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
@@ -244,7 +252,12 @@ export default function ResultEntryPage() {
         {/* Exam Select */}
         <div className="space-y-1">
           <label className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1"><FileBadge size={14} className="text-gray-400"/> Exam</label>
-          <select className="w-full border border-gray-300 p-2 rounded-lg bg-white" value={selectedExam} onChange={e => setSelectedExam(e.target.value)}>
+          <select 
+            aria-label="Select Exam" // ✅ Accessibility Fix
+            className="w-full border border-gray-300 p-2 rounded-lg bg-white" 
+            value={selectedExam} 
+            onChange={e => setSelectedExam(e.target.value)}
+          >
             <option value="">Select Exam...</option>
             {exams?.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
           </select>
@@ -263,7 +276,7 @@ export default function ResultEntryPage() {
          <div className="py-20 flex justify-center"><Spinner /></div>
       ) : students.length > 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            {/* ... (Table code remains exactly the same) ... */}
+            
              <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                   <thead className="bg-gray-50 text-gray-600 uppercase text-xs font-bold tracking-wider">
@@ -301,8 +314,8 @@ export default function ResultEntryPage() {
               </table>
             </div>
 
-            {/* FOOTER ACTIONS */}
-            <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center sticky bottom-0 bg-white/95 backdrop-blur-sm z-10">
+            {/* FOOTER ACTIONS - Fixed CSS Conflict */}
+            <div className="p-4 border-t border-gray-200 flex justify-between items-center sticky bottom-0 bg-white/95 backdrop-blur-sm z-10">
                 <div className="text-sm text-gray-500 flex items-center gap-2">
                    {lastSaved ? (
                      <span className="flex items-center gap-1 text-emerald-600 font-medium">
@@ -332,7 +345,7 @@ export default function ResultEntryPage() {
         onDataLoaded={handleCsvDataLoaded}
       />
 
-      {/* 🟢 ENHANCED MODAL: Handles Confirm, Saving, and Success states */}
+      {/* 🟢 ENHANCED MODAL */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalStep === 'SUCCESS' ? 'Success!' : 'Confirm Save'}>
         <div className="space-y-6">
             
@@ -363,7 +376,7 @@ export default function ResultEntryPage() {
                 </div>
             )}
 
-            {/* 3. SUCCESS STATE - THE "WHAT'S NEXT" */}
+            {/* 3. SUCCESS STATE */}
             {modalStep === 'SUCCESS' && (
                 <div className="text-center space-y-6">
                     <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto animate-bounce-short">
@@ -388,8 +401,9 @@ export default function ResultEntryPage() {
                         </button>
 
                         {/* Option B: View Reports */}
-                        <Link 
-                            href="/dashboard/admin/results" // Or wherever you view final reports
+                        {/* Converted to div/button to avoid Router nesting if needed, or keeping Link if configured */}
+                        <a 
+                            href="/dashboard/admin/results" 
                             className="flex flex-col items-center justify-center p-4 border rounded-xl hover:bg-gray-50 hover:border-emerald-200 transition-all group"
                         >
                              <div className="bg-gray-100 p-2 rounded-full mb-2 group-hover:bg-emerald-100">
@@ -397,7 +411,7 @@ export default function ResultEntryPage() {
                             </div>
                             <span className="font-bold text-gray-800 text-sm">View Reports</span>
                             <span className="text-xs text-gray-400">See final report cards</span>
-                        </Link>
+                        </a>
                     </div>
 
                     <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="w-full">

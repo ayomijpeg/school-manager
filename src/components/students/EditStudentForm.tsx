@@ -156,6 +156,7 @@ const Input = ({ label, value, onChange, type = "text", disabled }: any) => {
         {label}
       </label>
       <input
+        aria-label={label}
         className="w-full border border-slate-200 rounded-lg p-2.5 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 outline-none transition-all font-medium text-slate-700"
         type={type}
         value={value}
@@ -175,6 +176,7 @@ const Select = ({ label, value, onChange, children, disabled }: any) => {
         </p>
         <div className="border-b border-slate-100 pb-1.5 pt-0.5 relative">
           <select
+            aria-label="Select Option"
             className="w-full bg-transparent border-none p-0 text-base font-serif font-medium text-slate-900 appearance-none pointer-events-none leading-none"
             value={value}
             disabled
@@ -196,6 +198,7 @@ const Select = ({ label, value, onChange, children, disabled }: any) => {
       </label>
       <div className="relative">
         <select
+          aria-label="Select Option"
           className="w-full border border-slate-200 rounded-lg p-2.5 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 outline-none transition-all font-medium text-slate-700 appearance-none"
           value={value}
           onChange={(e) => onChange(e.target.value)}

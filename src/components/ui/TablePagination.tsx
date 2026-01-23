@@ -25,6 +25,7 @@ export default function TablePagination({ totalPages, currentPage }: { totalPage
       </div>
       <div className="flex gap-2">
         <button
+         aria-label="Previous Page"
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage <= 1}
           className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -32,6 +33,7 @@ export default function TablePagination({ totalPages, currentPage }: { totalPage
           <ChevronLeft className="w-4 h-4 text-slate-600" />
         </button>
         <button
+          aria-label="Next Page"
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
           className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

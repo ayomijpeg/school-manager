@@ -79,6 +79,7 @@ export default function StudentActions({
     <>
       {/* 1. TRIGGER BUTTON */}
       <button 
+       aria-label="Student Actions"
         ref={buttonRef}
         onClick={toggleDropdown}
         className={`p-2 rounded-lg transition-all border border-transparent ${

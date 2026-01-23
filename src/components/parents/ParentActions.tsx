@@ -56,6 +56,7 @@ export default function ParentActions({ parentId, parentName }: { parentId: stri
     <>
       {/* TRIGGER */}
       <button 
+        aria-label="More Actions"
         ref={buttonRef}
         onClick={toggleMenu}
         className={`p-2 rounded-lg transition-all ${isMenuOpen ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:text-emerald-700 hover:bg-emerald-50'}`}

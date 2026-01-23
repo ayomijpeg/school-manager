@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { useDataFetch } from '@/hooks/useDataFetch';
 import Button from '@/components/ui/Button';
-import Spinner from '@/components/ui/Spinner';
-import Modal from '@/components/ui/Modal'; // Ensure you have your Modal component
-import { Layers, FileBadge, Search, Printer, Trophy, X, User } from 'lucide-react';
+// Removed unused Spinner import
+import Modal from '@/components/ui/Modal'; 
+// Removed unused X, User imports
+import { Layers, FileBadge, Search, Printer, Trophy } from 'lucide-react';
 
 // --- TYPES ---
 interface SubjectResult {
@@ -162,6 +163,7 @@ export default function AdminResultsPage() {
               <Layers size={14} /> Level
            </label>
            <select 
+             aria-label="Select Level" // ✅ FIXED: Accessibility
              className="w-full border p-2 rounded-lg bg-slate-50 outline-none focus:ring-2 ring-emerald-500" 
              value={selectedLevel} 
              onChange={e => setSelectedLevel(e.target.value)}
@@ -176,6 +178,7 @@ export default function AdminResultsPage() {
               <FileBadge size={14} /> Exam
            </label>
            <select 
+             aria-label="Select Exam" // ✅ FIXED: Accessibility
              className="w-full border p-2 rounded-lg bg-slate-50 outline-none focus:ring-2 ring-emerald-500" 
              value={selectedExam} 
              onChange={e => setSelectedExam(e.target.value)}
@@ -186,7 +189,7 @@ export default function AdminResultsPage() {
         </div>
         
         <Button onClick={handleSearch} icon={Search} isLoading={isLoading}>
-           Load Broadsheet
+            Load Broadsheet
         </Button>
       </div>
 

@@ -11,7 +11,7 @@ import {
   Moon,
   Sun,
   School,
-  Menu // Added Menu icon
+  Menu
 } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,7 +26,7 @@ type HeaderProps = {
     SchoolConfig,
     'schoolName' | 'schoolType' | 'academicYear'
   > | null;
-  onMenuClick: () => void; // New prop for mobile toggle
+  onMenuClick: () => void;
 };
 
 export default function Header({ schoolConfig, onMenuClick }: HeaderProps) {
@@ -60,9 +60,13 @@ export default function Header({ schoolConfig, onMenuClick }: HeaderProps) {
     }
   };
 
+  // Safe data extraction
   const userEmail = user?.email ?? '';
   const userRole = user?.role ?? '';
-  const displayName = user?.firstName ? `${user.firstName} ${user.lastName}` : (userEmail.split('@')[0] || 'User');
+  const firstName = user?.firstName ?? '';
+  const lastName = user?.lastName ?? '';
+  
+  const displayName = firstName ? `${firstName} ${lastName}` : (userEmail.split('@')[0] || 'User');
   const userInitials = isLoading ? '?' : getInitials(userEmail) || 'U';
   const typeLabel = schoolConfig?.schoolType === 'TERTIARY' ? 'Higher Ed.' : 'Basic Ed.';
 
@@ -75,6 +79,7 @@ export default function Header({ schoolConfig, onMenuClick }: HeaderProps) {
         {/* Mobile Toggle Button */}
         <button 
           onClick={onMenuClick}
+          aria-label="Toggle Sidebar"
           className="md:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 rounded-lg transition-colors"
         >
           <Menu className="w-6 h-6" />
@@ -110,6 +115,7 @@ export default function Header({ schoolConfig, onMenuClick }: HeaderProps) {
             onChange={(e) => setGlobalQuery(e.target.value)}
             onKeyDown={handleSearch}
             placeholder="Search students... (Press Enter)"
+            aria-label="Global Search"
             className="w-full pl-9 pr-4 py-2 h-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400"
           />
         </div>
@@ -121,8 +127,8 @@ export default function Header({ schoolConfig, onMenuClick }: HeaderProps) {
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
+          aria-label="Toggle Theme"
           className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-          title="Toggle Theme"
         >
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
@@ -137,6 +143,7 @@ export default function Header({ schoolConfig, onMenuClick }: HeaderProps) {
         <div className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
+            aria-label="User Menu"
             className="flex items-center gap-3 p-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-900 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-all"
           >
             <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">

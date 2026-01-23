@@ -23,6 +23,7 @@ export default function NotificationPopover() {
     <div className="relative" ref={popoverRef}>
       {/* Trigger Button */}
       <button 
+       aria-label="View Notifications"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "p-2 rounded-lg transition-colors relative",
