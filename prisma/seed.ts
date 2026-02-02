@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding Admin User Only...');
 
-  const adminEmail = 'AYOMI@school.com';
+  const adminEmail = 'yosola@school.com';
   // In production, this would be dynamic or set during sign-up
-  const hashedPassword = await bcrypt.hash('adminpassword123', 10);
+  const hashedPassword = await bcrypt.hash('admin321', 10);
 
   await prisma.user.upsert({
     where: { email: adminEmail },

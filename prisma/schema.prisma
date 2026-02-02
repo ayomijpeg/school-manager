@@ -263,18 +263,22 @@ model ClassAssignment {
 model TimetableSlot {
   id        String    @id @default(uuid())
   classId   String
-  courseId  String
-  teacherId String
-  venueId   String?   // Linked to Venue Model
+  courseId  String?   // Made optional (e.g. for Lunch/Assembly)
+  teacherId String?   // Made optional
+  venueId   String?   
   
-  day       DayOfWeek
-  startTime DateTime
-  endTime   DateTime
+  day       DayOfWeek // Enum: MONDAY, TUESDAY...
+  startTime String    // "08:00"
+  endTime   String    // "08:45"
+  type      String    @default("LESSON") // LESSON, BREAK, EXAM, GENERAL
   
   class     Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
-  course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  teacher   Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  course    Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher   Teacher?  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   venue     Venue?    @relation(fields: [venueId], references: [id])
+
+  // ✅ FIXED: Changed 'dayOfWeek' to 'day'
+  @@index([classId, day])
 }
 
 model StudentAttendance {

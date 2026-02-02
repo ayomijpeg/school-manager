@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const fullName = `${data.lastName} ${data.firstName}`;
     // Default password is simplified for parents: 'password' or '123456'
     // You can change this to whatever default you prefer
-    const defaultPassword = await bcrypt.hash(`password123`, 10);
+    const defaultPassword = await bcrypt.hash(`parent@123`, 10);
     
     // 2. SHORT & UNIQUE EMAIL GENERATOR
     let emailToUse = data.email;

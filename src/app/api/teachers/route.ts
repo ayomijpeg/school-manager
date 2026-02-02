@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const data = createTeacherSchema.parse(body);
 
     const fullName = `${data.lastName} ${data.firstName}`;
-    const defaultPassword = await bcrypt.hash(`Teacher@123`, 10); 
+    const defaultPassword = await bcrypt.hash(`teacher123`, 10); 
 
     // ID GENERATION
     const year = new Date().getFullYear();

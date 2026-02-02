@@ -8,7 +8,7 @@ import { ROUTES } from '@/lib/constant'; // Imported fixed routes
 import {
   LayoutDashboard, Layers, School, BookOpen, GraduationCap, Users, UserCircle,
   Calendar, FileText, Receipt, ClipboardCheck, Award, Settings, LogOut,
-  ChevronRight, X, Building2, ClipboardList, FileBadge, LucideIcon, BarChart3,CalendarDays
+  ChevronRight, X, Building2, ClipboardList, FileBadge, LucideIcon, BarChart3,CalendarDays,CalendarClock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -68,6 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     { href: ROUTES.PARENTS, label: 'Parents', icon: UserCircle },
     { href: ROUTES.RESULT_ENTRY, label: 'Result Entry', icon: ClipboardList }, 
     { href: ROUTES.ADMIN_RESULTS, label: 'Broadsheet', icon: BarChart3 }, 
+    { href: ROUTES.TIMETABLE, label: 'Timetable', icon: CalendarClock },
     { href: ROUTES.EVENTS, label: 'Events', icon: Calendar },
   ];
   
@@ -85,7 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   
   const studentParentLinks = [
     ...(user?.role === 'PARENT' ? [{ href: '/dashboard/children', label: 'My Children', icon: GraduationCap }] : []),
-    { href: ROUTES.TIMETABLE, label: 'Timetable', icon: Calendar },
+    { href:'/dashboard/parents/timetable', label: 'Timetable', icon: Calendar },
     { href: ROUTES.MY_RESULTS, label: 'Report Cards', icon: Award }, // Parents view Report Cards
     { href: ROUTES.BILLING, label: 'Invoices', icon: Receipt },
   ];

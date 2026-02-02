@@ -71,6 +71,10 @@ export async function PATCH(
       }
 
       return parent;
+    }, {
+      // ✅ FIX: Increase timeout to 20 seconds (Default is 5s)
+      maxWait: 5000, 
+      timeout: 20000 
     });
 
     return NextResponse.json(result);
@@ -88,19 +92,12 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    // Note: We don't have deletedAt on Parent schema yet?
-    // If not, we should add it. For now, assuming you added it or use Hard Delete.
-    // Recommended: Add deletedAt to Parent model.
-    // For MVP Hard Delete logic (since Parent is less critical than Student records):
-    
+
     // 1. Unlink students first
     await prisma.parentStudentLink.deleteMany({ where: { parentId: id } });
     
     // 2. Delete Parent Profile
     await prisma.parent.delete({ where: { id } });
-    
-    // 3. Delete User Login
-    // (Fetch userId first if needed, cascading delete might handle this if config is Cascade)
     
     return NextResponse.json({ success: true });
   } catch (error) {

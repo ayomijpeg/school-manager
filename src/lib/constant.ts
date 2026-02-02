@@ -33,7 +33,7 @@ export const ROUTES = {
 
   // --- OPERATIONS ---
   ATTENDANCE: '/dashboard/attendance',
-  TIMETABLE: '/dashboard/timetable',
+  TIMETABLE: '/dashboard/admin/timetable',
   FINANCE: '/dashboard/finance',
   BILLING: '/dashboard/billing',
   
