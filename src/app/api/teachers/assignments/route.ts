@@ -5,7 +5,7 @@ import { z } from 'zod';
 const assignSchema = z.object({
   teacherId: z.string().uuid(),
   classId: z.string(), // Accepts UUID, "all-arms", or "auto-create"
-  courseId: z.string().uuid(),
+  courseId: z.string().uuid().optional().nullable(), // Omit or null = General / Class Teacher
   levelId: z.string().optional().nullable(),
 });
 
@@ -42,6 +42,13 @@ export async function POST(request: Request) {
 
     const { teacherId, classId, courseId, levelId } = result.data;
 
+    // Helper: existence check that works when courseId can be null
+    const existsWhere = (cId: string) => ({
+      teacherId,
+      classId: cId,
+      ...(courseId != null ? { courseId } : { courseId: null }),
+    });
+
     // SCENARIO 1: AUTO-CREATE 'General' CLASS
     if (classId === 'auto-create') {
       if (!levelId) return NextResponse.json({ error: "Level required" }, { status: 400 });
@@ -56,14 +63,14 @@ export async function POST(request: Request) {
         });
       }
 
-      const exists = await prisma.classAssignment.findUnique({
-        where: { teacherId_classId_courseId: { teacherId, classId: defaultClass.id, courseId } }
+      const exists = await prisma.classAssignment.findFirst({
+        where: existsWhere(defaultClass.id)
       });
 
       if (exists) return NextResponse.json({ error: "Already assigned" }, { status: 409 });
 
       const newAssignment = await prisma.classAssignment.create({
-        data: { teacherId, classId: defaultClass.id, courseId },
+        data: { teacherId, classId: defaultClass.id, ...(courseId ? { courseId } : {}) },
         include: { class: { include: { level: true } }, course: true }
       });
 
@@ -84,11 +91,13 @@ export async function POST(request: Request) {
       let count = 0;
       await prisma.$transaction(async (tx) => {
         for (const cls of allClasses) {
-          const exists = await tx.classAssignment.findUnique({
-            where: { teacherId_classId_courseId: { teacherId, classId: cls.id, courseId } }
+          const exists = await tx.classAssignment.findFirst({
+            where: existsWhere(cls.id)
           });
           if (!exists) {
-            await tx.classAssignment.create({ data: { teacherId, classId: cls.id, courseId } });
+            await tx.classAssignment.create({
+              data: { teacherId, classId: cls.id, ...(courseId ? { courseId } : {}) }
+            });
             count++;
           }
         }
@@ -98,14 +107,14 @@ export async function POST(request: Request) {
     }
 
     // SCENARIO 3: STANDARD ASSIGN
-    const exists = await prisma.classAssignment.findUnique({
-      where: { teacherId_classId_courseId: { teacherId, classId, courseId } }
+    const exists = await prisma.classAssignment.findFirst({
+      where: existsWhere(classId)
     });
 
     if (exists) return NextResponse.json({ error: "Already assigned" }, { status: 409 });
 
     const newAssignment = await prisma.classAssignment.create({
-      data: { teacherId, classId, courseId },
+      data: { teacherId, classId, ...(courseId ? { courseId } : {}) },
       include: { class: { include: { level: true } }, course: true }
     });
 

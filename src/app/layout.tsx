@@ -27,9 +27,7 @@ export default function RootLayout({
         <AuthProvider>
           {/* 🟢 4. Updated ThemeProvider to use your correct storage key */}
           <ThemeProvider 
-            attribute="class" 
             defaultTheme="light" 
-            enableSystem={false}
             storageKey="yosola-theme" 
           >
              <Toaster position="top-right" richColors closeButton />

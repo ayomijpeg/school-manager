@@ -29,14 +29,15 @@ export default async function AttendanceHubPage() {
 
   if (!teacher) return <div className="p-8">Teacher profile not found.</div>;
 
-  // 3. Fetch Assigned Classes
-  const assignments = await prisma.classAssignment.findMany({
+  // 3. Fetch Assigned Classes (only subject-based for attendance entry)
+  const allAssignments = await prisma.classAssignment.findMany({
     where: { teacherId: teacher.id },
     include: {
       class: { include: { _count: { select: { enrollments: true } } } },
       course: true,
     }
   });
+  const assignments = allAssignments.filter((a) => a.course != null);
 
   return (
     <div className="max-w-5xl mx-auto p-6">

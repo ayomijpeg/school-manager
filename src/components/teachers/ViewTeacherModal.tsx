@@ -113,7 +113,7 @@ export default function ViewTeacherModal({ isOpen, onClose, teacher }: Props) {
                     </div>
                     <div>
                       <p className="font-bold text-gray-800 text-sm">{assign.class?.name}</p>
-                      <p className="text-xs text-gray-500 font-medium">{assign.course?.name}</p>
+                      <p className="text-xs text-gray-500 font-medium">{assign.course?.name ?? 'General / Class Teacher'}</p>
                     </div>
                   </div>
                 ))}

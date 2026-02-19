@@ -6,6 +6,7 @@ import InvoiceGenerator from '@/components/finance/InvoiceGenerator';
 import InvoiceList from '@/components/finance/InvoiceList';
 import PaymentSettingsModal from '@/components/finance/PaymentSettingsModal';
 import TablePagination from '@/components/ui/TablePagination';
+import RefreshButton from '@/components/ui/RefreshButton';
 import { formatCurrency } from '@/lib/utils';
 import { getCurrentUser } from '@/lib/session';
 
@@ -78,11 +79,12 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
         </div>
         
         <div className="flex items-center gap-3">
+            <RefreshButton />
             {/* PRINT BUTTON (New) */}
             <Link 
                 href={`/dashboard/finance/print?query=${query}`} 
                 target="_blank" 
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white font-bold rounded-xl text-sm hover:bg-slate-800 transition-all shadow-sm"
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 dark:bg-slate-800 text-white font-bold rounded-xl text-sm hover:bg-slate-800 dark:hover:bg-slate-700 transition-all shadow-sm"
             >
                 <Printer size={18} />
                 <span className="hidden md:inline">Print List</span>

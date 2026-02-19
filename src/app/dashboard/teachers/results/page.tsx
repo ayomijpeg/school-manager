@@ -29,13 +29,15 @@ export default async function ResultsHubPage() {
   if (!teacher) return <div className="p-8">Teacher profile not found.</div>;
 
   // ... rest of the code is fine ...
-  const assignments = await prisma.classAssignment.findMany({
+  const allAssignments = await prisma.classAssignment.findMany({
     where: { teacherId: teacher.id },
     include: {
       class: { include: { _count: { select: { enrollments: true } } } },
       course: true,
     }
   });
+  // Only show subject-based assignments (results are per course)
+  const assignments = allAssignments.filter((a) => a.course != null);
 
   return (
     <div className="max-w-5xl mx-auto p-6">

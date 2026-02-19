@@ -249,13 +249,13 @@ model Enrollment {
 }
 
 model ClassAssignment {
-  id        String  @id @default(uuid())
+  id        String   @id @default(uuid())
   teacherId String
   classId   String
-  courseId  String
-  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
-  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  courseId  String?  // Optional: null = General / Class Teacher (manages class, in charge, or general subject)
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  course    Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@unique([teacherId, classId, courseId])
 }

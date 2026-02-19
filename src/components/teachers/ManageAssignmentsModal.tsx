@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 interface Assignment {
   id: string;
   class: { id: string; name: string; level?: { name: string } };
-  course: { id: string; name: string };
+  course: { id: string; name: string } | null;
 }
 
 interface ClassOption {
@@ -43,6 +43,7 @@ export default function ManageAssignmentsModal({
   const [selectedLevel, setSelectedLevel] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
+  const GENERAL_COURSE_VALUE = "__general__"; // sent when "General / Class Teacher" is chosen
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 🟢 SMART FILTER: Adds "Auto-create" or "All Arms" option
@@ -91,8 +92,9 @@ export default function ManageAssignmentsModal({
   };
 
   const handleAssign = async () => {
-    if (!selectedClass || !selectedCourse) {
-      toast.error("Please select a Class and Subject.");
+    const isGeneral = selectedCourse === GENERAL_COURSE_VALUE || !selectedCourse;
+    if (!selectedClass || (!isGeneral && !selectedCourse)) {
+      toast.error("Please select a Class and a Subject (or General / Class Teacher).");
       return;
     }
 
@@ -101,7 +103,7 @@ export default function ManageAssignmentsModal({
       const payload = { 
         teacherId, 
         classId: selectedClass, 
-        courseId: selectedCourse,
+        ...(isGeneral ? {} : { courseId: selectedCourse }),
         levelId: selectedLevel 
       };
 
@@ -145,14 +147,14 @@ export default function ManageAssignmentsModal({
             name: assignedClass?.name || "Unknown",
             level: { name: assignedLevel?.name || "" }
           },
-          course: assignedCourse || { id: selectedCourse, name: "Unknown" }
+          course: isGeneral ? null : (assignedCourse || { id: selectedCourse, name: "Unknown" })
         };
         setAssignments(prev => [...prev, newAssignment]);
       }
       
       // Reset logic
       if (selectedClass !== 'all-arms' && selectedClass !== 'auto-create') {
-         setSelectedClass(""); 
+         setSelectedClass("");
       } else {
          setSelectedLevel("");
          setSelectedClass("");
@@ -250,14 +252,15 @@ export default function ManageAssignmentsModal({
                 </div>
 
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-gray-500 mb-1 block">3. Select Subject</label>
+                  <label className="text-[10px] uppercase font-bold text-gray-500 mb-1 block">3. Subject (or General)</label>
                   <select 
-                    aria-label="Select Subject"
+                    aria-label="Select Subject or General"
                     className="w-full bg-white border border-gray-200 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none"
                     value={selectedCourse}
                     onChange={(e) => setSelectedCourse(e.target.value)}
                   >
                     <option value="">Select Subject...</option>
+                    <option value={GENERAL_COURSE_VALUE} className="font-medium text-indigo-600">— General / Class Teacher —</option>
                     {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
@@ -265,7 +268,7 @@ export default function ManageAssignmentsModal({
               
               <button 
                 onClick={handleAssign}
-                disabled={isSubmitting || !selectedClass || !selectedCourse}
+                disabled={isSubmitting || !selectedClass || (selectedCourse !== GENERAL_COURSE_VALUE && !selectedCourse)}
                 className="flex items-center justify-center gap-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 mt-2"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 
@@ -298,7 +301,7 @@ export default function ManageAssignmentsModal({
                           <BookOpen size={14} />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-800">{assign.course?.name}</p>
+                        <p className="text-sm font-bold text-gray-800">{assign.course?.name ?? 'General / Class Teacher'}</p>
                         <div className="flex items-center gap-1.5 text-xs text-gray-500">
                           <span className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 font-medium text-gray-600">
                              {assign.class?.level?.name || "N/A"}

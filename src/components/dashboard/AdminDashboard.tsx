@@ -13,6 +13,7 @@ import {
   ClipboardCheck,
 } from 'lucide-react';
 import Card from '@/components/ui/Card';
+import RefreshButton from '@/components/ui/RefreshButton';
 import { format } from 'date-fns';
 
 interface AdminDashboardProps {
@@ -52,9 +53,10 @@ export default function AdminDashboard({
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Welcome bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <p className="text-slate-500 text-sm">
+        <p className="text-slate-500 dark:text-slate-400 text-sm">
           {greeting()} • {format(new Date(), 'EEEE, MMMM d, yyyy')}
         </p>
+        <RefreshButton />
       </div>
 
       {/* Metric cards */}
@@ -92,10 +94,10 @@ export default function AdminDashboard({
       {/* Registrar's Office */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
             <div>
-              <h2 className="text-xl font-serif font-bold text-slate-800">Registrar&apos;s Office</h2>
-              <p className="text-sm text-slate-500 mt-0.5">
+              <h2 className="text-xl font-serif font-bold text-slate-800 dark:text-slate-100">Registrar&apos;s Office</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                 Manage {labels.students.toLowerCase()}, staff, and academic records.
               </p>
             </div>
@@ -166,22 +168,22 @@ interface MetricCardProps {
 
 function MetricCard({ label, value, icon: Icon, trend, isFinance }: MetricCardProps) {
   return (
-    <Card className="p-6 border-slate-200 shadow-sm hover:shadow-md transition-all group bg-white rounded-2xl">
+    <Card className="p-6 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group bg-white dark:bg-slate-900 rounded-2xl">
       <div className="flex justify-between items-start mb-3">
         <div
           className={`p-2.5 rounded-xl transition-colors ${
             isFinance
-              ? 'bg-amber-50 text-amber-700 group-hover:bg-amber-100'
-              : 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100'
+              ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30'
+              : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30'
           }`}
         >
           <Icon size={20} />
         </div>
-        <ArrowUpRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-600 transition-colors" />
+        <ArrowUpRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
       </div>
-      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</h4>
-      <p className="text-2xl font-serif font-bold text-slate-900">{typeof value === 'number' ? value.toLocaleString() : value}</p>
-      <p className="text-xs text-slate-500 mt-1">{trend}</p>
+      <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{label}</h4>
+      <p className="text-2xl font-serif font-bold text-slate-900 dark:text-slate-100">{typeof value === 'number' ? value.toLocaleString() : value}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{trend}</p>
     </Card>
   );
 }
@@ -190,12 +192,12 @@ function ActionCard({ label, href, icon: Icon }: { label: string; href: string; 
   return (
     <Link
       href={href}
-      className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-slate-100 bg-white hover:border-emerald-200 hover:shadow-md transition-all group text-center min-h-[100px]"
+      className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-200 dark:hover:border-emerald-800 hover:shadow-md transition-all group text-center min-h-[100px]"
     >
-      <div className="p-2 rounded-lg bg-slate-50 text-slate-500 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-colors">
+      <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/20 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
         <Icon className="w-5 h-5" />
       </div>
-      <span className="text-sm font-medium text-slate-600 group-hover:text-emerald-800">{label}</span>
+      <span className="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-emerald-800 dark:group-hover:text-emerald-400">{label}</span>
     </Link>
   );
 }

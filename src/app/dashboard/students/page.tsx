@@ -12,6 +12,7 @@ import { SchoolType } from '@prisma/client';
 import StudentActions from '@/components/students/StudentActions';
 import ExportButton from '@/components/ui/export';
 import ImportActions from '@/components/ui/ImportActions';
+import RefreshButton from '@/components/ui/RefreshButton';
 
 // --- Server Data Fetching ---
 async function getStudents(query: string) {
@@ -70,6 +71,7 @@ export default async function StudentListPage({
           </p>
         </div>
         <div className="flex gap-3">
+          <RefreshButton />
           <ExportButton />
           <ImportActions />
           <Link 

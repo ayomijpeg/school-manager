@@ -4,10 +4,10 @@ import { NextResponse, NextRequest } from 'next/server';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 
-// 1. Zod schema for assignment
+// 1. Zod schema for assignment (courseId optional = General / Class Teacher)
 const assignTeacherSchema = z.object({
   teacherId: z.string().uuid('Invalid Teacher ID'),
-  courseId: z.string().uuid('Invalid Course ID'),
+  courseId: z.string().uuid('Invalid Course ID').optional().nullable(),
 });
 
 // --- ASSIGN A TEACHER TO A COURSE IN A CLASS (POST) ---
@@ -18,28 +18,27 @@ export async function POST(
   try {
     const classId = params.id;
     const body = await request.json();
-    const { teacherId, courseId } = assignTeacherSchema.parse(body);
+    const parsed = assignTeacherSchema.parse(body);
+    const { teacherId, courseId } = parsed;
 
-    // 2. Create the ClassAssignment record
+    // 2. Create the ClassAssignment record (courseId null = General / Class Teacher)
     const newAssignment = await prisma.classAssignment.create({
       data: {
-        teacherId: teacherId,
-        courseId: courseId,
-        classId: classId,
+        teacherId,
+        classId,
+        ...(courseId ? { courseId } : {}),
       },
       include: {
-        // Return names for confirmation
         teacher: { select: { fullName: true } },
         course: { select: { name: true } },
         class: { select: { name: true, level: { select: { name: true } } } },
       },
     });
 
-    // 3. Send back a descriptive success message
-    // e.g., "Assigned Mr. Adebayo to teach Physics in JSS 1A"
+    const roleLabel = newAssignment.course ? newAssignment.course.name : 'General / Class Teacher';
     return NextResponse.json(
       {
-        message: `Assigned ${newAssignment.teacher.fullName} to teach ${newAssignment.course.name} in ${newAssignment.class.level.name} ${newAssignment.class.name}`,
+        message: `Assigned ${newAssignment.teacher.fullName} to ${roleLabel} in ${newAssignment.class.level.name} ${newAssignment.class.name}`,
         data: newAssignment,
       },
       { status: 201 },

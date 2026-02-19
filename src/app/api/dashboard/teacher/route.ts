@@ -46,9 +46,12 @@ export async function GET() {
       }
     });
 
-    // 5. Calculate Stats
+    // 5. Calculate Stats (include all assignments)
     const totalClasses = assignments.length;
-    const totalStudents = assignments.reduce((sum, a) => sum + a.class._count.enrollments, 0);
+    const totalStudents = assignments.reduce(
+      (sum, a) => sum + a.class._count.enrollments,
+      0
+    );
 
     // 6. Get Upcoming Events (Next 3)
     const events = await prisma.event.findMany({
@@ -57,22 +60,23 @@ export async function GET() {
       orderBy: { startTime: 'asc' }
     });
 
-    // 7. Return Data
+    // 7. Return Data (include both subject-based and general assignments)
     return NextResponse.json({
       profile: { 
         name: teacher.fullName, 
         staffId: teacher.staffId 
       },
-      stats: { 
-        totalClasses, 
-        totalStudents 
+      stats: {
+        totalClasses,
+        totalStudents
       },
       classes: assignments.map(a => ({
         id: a.class.id,
         name: a.class.name,
-        subject: a.course.name,
+        subject: a.course?.name ?? 'General / Class Teacher',
         students: a.class._count.enrollments,
-        courseId: a.course.id 
+        courseId: a.course?.id ?? null, // null for general assignments
+        isGeneral: a.course === null
       })),
       events
     });

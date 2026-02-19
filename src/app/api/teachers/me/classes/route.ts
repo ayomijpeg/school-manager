@@ -56,12 +56,12 @@ export async function GET(request: NextRequest) {
       ]
     });
 
-    // 4. Format the response for the frontend (optional but helpful)
+    // 4. Format the response for the frontend (course null = General / Class Teacher)
     const formattedAssignments = assignments.map(a => ({
         classId: a.class.id,
-        className: `${a.class.level.name} ${a.class.name}`, // "JSS 1 A"
-        courseId: a.course.id,
-        courseName: a.course.name,
+        className: `${a.class.level.name} ${a.class.name}`,
+        courseId: a.course?.id ?? null,
+        courseName: a.course?.name ?? 'General / Class Teacher',
     }));
 
     return NextResponse.json(formattedAssignments, { status: 200 });

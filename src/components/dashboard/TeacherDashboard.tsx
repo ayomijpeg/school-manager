@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import RefreshButton from '@/components/ui/RefreshButton';
 
 type DashboardData = {
   profile: { name: string; staffId: string };
@@ -23,7 +24,8 @@ type DashboardData = {
     name: string;
     subject: string;
     students: number;
-    courseId: string;
+    courseId: string | null;
+    isGeneral?: boolean;
   }>;
   events: Array<{
     id: string;
@@ -38,20 +40,23 @@ export default function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    async function fetchDashboard() {
-      try {
-        const res = await fetch('/api/dashboard/teacher');
-        if (!res.ok) throw new Error('Failed to fetch dashboard data');
-        const json = await res.json();
-        setData(json);
-      } catch (err) {
-        console.error(err);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
+  const fetchDashboard = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const res = await fetch('/api/dashboard/teacher', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to fetch dashboard data');
+      const json = await res.json();
+      setData(json);
+    } catch (err) {
+      console.error(err);
+      setError(true);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchDashboard();
   }, []);
 
@@ -80,15 +85,18 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="space-y-8 animate-in fade-in duration-500">
       {/* Welcome banner */}
       <div className="bg-gradient-to-r from-emerald-800 to-emerald-900 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10">
-          <p className="text-emerald-200 text-sm font-medium uppercase tracking-wider mb-1">Teacher portal</p>
-          <h1 className="text-2xl sm:text-3xl font-bold">Welcome back, {data.profile.name}</h1>
-          <p className="text-emerald-100 mt-2 text-sm sm:text-base">
-            {format(new Date(), 'EEEE, MMMM d')} • Staff ID: <span className="font-mono bg-white/20 px-2 py-0.5 rounded">{data.profile.staffId}</span>
-          </p>
+        <div className="relative z-10 flex items-start justify-between">
+          <div>
+            <p className="text-emerald-200 text-sm font-medium uppercase tracking-wider mb-1">Teacher portal</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">Welcome back, {data.profile.name}</h1>
+            <p className="text-emerald-100 mt-2 text-sm sm:text-base">
+              {format(new Date(), 'EEEE, MMMM d')} • Staff ID: <span className="font-mono bg-white/20 px-2 py-0.5 rounded">{data.profile.staffId}</span>
+            </p>
+          </div>
+          <RefreshButton onRefresh={fetchDashboard} className="bg-white/10 hover:bg-white/20 border-white/20" />
         </div>
         <div className="absolute right-0 top-0 h-40 w-40 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl pointer-events-none" />
       </div>
@@ -103,19 +111,20 @@ export default function TeacherDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* My Classes */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
-            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-emerald-600" />
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               My classes
             </h2>
             <div className="flex items-center gap-3">
+              <RefreshButton onRefresh={fetchDashboard} size={16} />
               <Link
                 href="/dashboard/teachers/timetable"
-                className="text-sm text-slate-600 hover:text-emerald-700 font-medium flex items-center gap-1.5"
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium flex items-center gap-1.5"
               >
                 <CalendarDays className="w-4 h-4" /> Schedule
               </Link>
-              <Link href="/dashboard/teachers/classes" className="text-sm text-emerald-700 hover:text-emerald-800 font-medium flex items-center gap-1 group">
+              <Link href="/dashboard/teachers/classes" className="text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium flex items-center gap-1 group">
                 View all <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
@@ -130,7 +139,11 @@ export default function TeacherDashboard() {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-lg font-bold text-slate-800 group-hover:text-emerald-800 transition-colors">{cls.name}</h3>
-                    <span className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 bg-slate-100 rounded-lg text-xs font-medium text-slate-600">
+                    <span className={`inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-lg text-xs font-medium ${
+                      cls.isGeneral 
+                        ? 'bg-gray-100 text-gray-600' 
+                        : 'bg-slate-100 text-slate-600'
+                    }`}>
                       {cls.subject}
                     </span>
                   </div>
@@ -139,20 +152,26 @@ export default function TeacherDashboard() {
                   </div>
                 </div>
                 <p className="text-xs text-slate-500 mb-4">{cls.students} students</p>
-                <div className="flex gap-2">
-                  <Link
-                    href={`/dashboard/teachers/attendance/${cls.id}?courseId=${cls.courseId}`}
-                    className="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-lg text-slate-700 transition-colors"
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Attendance
-                  </Link>
-                  <Link
-                    href={`/dashboard/teachers/results/${cls.id}?courseId=${cls.courseId}`}
-                    className="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg transition-colors"
-                  >
-                    <FileText className="w-4 h-4" /> Results
-                  </Link>
-                </div>
+                {cls.isGeneral || !cls.courseId ? (
+                  <div className="text-center py-2 text-xs text-gray-500 italic">
+                    Class teacher / in charge — no subject-specific actions
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Link
+                      href={`/dashboard/teachers/attendance/${cls.id}?courseId=${cls.courseId}`}
+                      className="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-lg text-slate-700 transition-colors"
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> Attendance
+                    </Link>
+                    <Link
+                      href={`/dashboard/teachers/results/${cls.id}?courseId=${cls.courseId}`}
+                      className="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg transition-colors"
+                    >
+                      <FileText className="w-4 h-4" /> Results
+                    </Link>
+                  </div>
+                )}
               </div>
             ))}
           </div>

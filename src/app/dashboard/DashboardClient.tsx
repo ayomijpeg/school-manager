@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
 import Spinner from '@/components/ui/Spinner';
+import RefreshButton from '@/components/ui/RefreshButton';
 import AdminDashboard from '@/components/dashboard/AdminDashboard';
 import TeacherDashboard from '@/components/dashboard/TeacherDashboard';
 import type { SchoolConfig } from '@prisma/client';
@@ -54,40 +55,50 @@ export function DashboardClient({ config, counts }: DashboardDataProps) {
       
       {/* --- GLOBAL HEADER (Visible to Admin & Teacher) --- */}
       <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-200 dark:border-slate-800 pb-6 gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${
-              isTertiary 
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                : 'bg-indigo-50 text-indigo-700 border-indigo-100'
-            }`}>
-              {isTertiary ? 'Higher Ed' : 'Basic Ed'}
-            </span>
-            <span className="text-slate-300">|</span>
-            <span className="text-xs font-medium text-slate-500">
-              Session {config.academicYear}
-            </span>
+        <div className="flex items-start justify-between w-full md:w-auto">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${
+                isTertiary 
+                  ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' 
+                  : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-800'
+              }`}>
+                {isTertiary ? 'Higher Ed' : 'Basic Ed'}
+              </span>
+              <span className="text-slate-300 dark:text-slate-600">|</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Session {config.academicYear}
+              </span>
+            </div>
+            <h1 className="text-3xl font-serif text-slate-900 dark:text-slate-100 tracking-tight">
+              {config.schoolName}
+            </h1>
           </div>
-          <h1 className="text-3xl font-serif text-slate-900 dark:text-slate-100 tracking-tight">
-            {config.schoolName}
-          </h1>
+          <div className="md:hidden">
+            <RefreshButton />
+          </div>
         </div>
 
-        <div className="text-right hidden md:block">
-           <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Logged in as</p>
-           <div className="flex items-center justify-end gap-3">
-             <div className="text-right">
-               <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                 {user.fullName || user.email}
-               </p>
-               <p className="text-xs text-slate-500 capitalize">
-                 {user.role.toLowerCase()}
-               </p>
+        <div className="flex items-end gap-3">
+          <div className="hidden md:block">
+            <RefreshButton />
+          </div>
+          <div className="text-right hidden md:block">
+             <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Logged in as</p>
+             <div className="flex items-center justify-end gap-3">
+               <div className="text-right">
+                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                   {user.fullName || user.email}
+                 </p>
+                 <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
+                   {user.role.toLowerCase()}
+                 </p>
+               </div>
+               <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-serif font-bold">
+                 {(user.fullName?.[0] || user.email?.[0] || 'U').toUpperCase()}
+               </div>
              </div>
-             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-serif font-bold">
-               {(user.fullName?.[0] || user.email?.[0] || 'U').toUpperCase()}
-             </div>
-           </div>
+          </div>
         </div>
       </div>
 

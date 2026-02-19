@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { User, FileText, ClipboardCheck } from 'lucide-react';
+import RefreshButton from '@/components/ui/RefreshButton';
 
 async function loadTeacher(userId: string) {
   return prisma.teacher.findUnique({
@@ -70,21 +71,27 @@ export default async function MyClassesPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">My Classes</h1>
-        <p className="text-gray-500">Select a class to manage results or attendance.</p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Classes</h1>
+          <p className="text-gray-500 dark:text-gray-400">Select a class to manage results or attendance.</p>
+        </div>
+        <RefreshButton />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {assignments.map((assign) => (
+        {assignments.map((assign) => {
+          const isGeneral = !assign.courseId || !assign.course;
+          const courseLabel = assign.course?.name ?? 'General / Class Teacher';
+          return (
           <div key={assign.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow">
             
             {/* Card Header */}
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="text-lg font-bold text-gray-800">{assign.class.name}</h3>
-                <span className="inline-block mt-1 text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-1 rounded">
-                  {assign.course.name}
+                <span className={`inline-block mt-1 text-xs font-semibold px-2 py-1 rounded ${isGeneral ? 'text-gray-700 bg-gray-100' : 'text-indigo-700 bg-indigo-50'}`}>
+                  {courseLabel}
                 </span>
               </div>
               <div className="flex items-center gap-1 text-gray-500 text-xs font-medium bg-gray-100 px-2 py-1 rounded">
@@ -93,27 +100,30 @@ export default async function MyClassesPage() {
               </div>
             </div>
 
-            {/* Actions */}
+            {/* Actions: Results/Attendance only for subject assignments; general shows class role only */}
+            {isGeneral ? (
+              <p className="text-sm text-gray-500 italic">Class teacher / in charge — no subject-specific results or attendance.</p>
+            ) : (
             <div className="grid grid-cols-2 gap-3">
-              {/* This link points to the Result Entry page */}
               <Link 
-                href={`/dashboard/teachers/results/${assign.class.id}?courseId=${assign.course.id}`}
+                href={`/dashboard/teachers/results/${assign.class.id}?courseId=${assign.course!.id}`}
                 className="flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 <FileText size={16} />
                 Results
               </Link>
-              
               <Link
-                href={`/dashboard/teachers/attendance/${assign.class.id}?courseId=${assign.course.id}`}
+                href={`/dashboard/teachers/attendance/${assign.class.id}?courseId=${assign.course!.id}`}
                 className="flex items-center justify-center gap-2 px-3 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg transition-colors"
               >
                 <ClipboardCheck size={16} />
                 Attendance
               </Link>
             </div>
+            )}
           </div>
-        ))}
+          );
+        })}
 
         {assignments.length === 0 && (
           <div className="col-span-full py-12 text-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl">
