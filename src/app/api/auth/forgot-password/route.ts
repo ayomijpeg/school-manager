@@ -1,10 +1,19 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const RESET_EXPIRY = '1h'; // 1 hour
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit(request);
+  if (!rateLimit.ok) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: rateLimit.retryAfter ? { 'Retry-After': String(rateLimit.retryAfter) } : undefined }
+    );
+  }
+
   try {
     const body = await request.json();
     const email = typeof body.email === 'string' ? body.email.trim() : '';

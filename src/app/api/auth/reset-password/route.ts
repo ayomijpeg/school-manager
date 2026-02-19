@@ -2,8 +2,17 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import { jwtVerify } from 'jose';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit(request);
+  if (!rateLimit.ok) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429, headers: rateLimit.retryAfter ? { 'Retry-After': String(rateLimit.retryAfter) } : undefined }
+    );
+  }
+
   try {
     const body = await request.json();
     const token = typeof body.token === 'string' ? body.token.trim() : '';

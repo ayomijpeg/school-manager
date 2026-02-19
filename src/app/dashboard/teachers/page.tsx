@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { GraduationCap, Mail, Phone } from 'lucide-react';
 import AddTeacherButton from '@/components/teachers/AddTeacherButton';
-import TeacherActions from '@/components/teachers/TeacherActions'; 
+import TeacherActions from '@/components/teachers/TeacherActions';
+import RefreshButton from '@/components/ui/RefreshButton'; 
 
 // Fetch Teachers
 async function getTeachers(query: string) {
@@ -51,17 +52,23 @@ export default async function TeacherListPage({ searchParams }: { searchParams: 
       
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-3xl font-serif text-slate-900">Staff Directory</h1>
-          <p className="text-slate-500 mt-1">Manage teaching staff and department assignments.</p>
+          <h1 className="text-3xl font-serif text-slate-900 dark:text-slate-100">Staff Directory</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Manage teaching staff and department assignments.</p>
         </div>
-        <AddTeacherButton departments={metadata.departments} /> 
+        <div className="flex items-center gap-3">
+          <RefreshButton />
+          <AddTeacherButton departments={metadata.departments} />
+        </div> 
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         {teachers.length === 0 ? (
-           <div className="text-center py-20">
-             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4"><GraduationCap className="text-slate-400" /></div>
-             <p className="text-slate-500">No teachers found.</p>
+           <div className="text-center py-20 px-4">
+             <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4"><GraduationCap className="w-8 h-8 text-slate-400 dark:text-slate-500" /></div>
+             <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">No teachers found</h3>
+             <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-sm mx-auto">
+               {query ? `No staff match "${query}".` : 'Add your first teacher using the button above.'}
+             </p>
            </div>
         ) : (
           <table className="w-full text-left">

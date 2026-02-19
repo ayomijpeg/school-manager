@@ -8,7 +8,9 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "db-seed": "prisma db seed",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
@@ -42,6 +44,7 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.21",
     "baseline-browser-mapping": "^2.9.11",
     "eslint": "^9",
@@ -50,6 +53,7 @@
     "prisma": "^5.22.0",
     "tailwindcss": "^4.1.16",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.9"
   }
 }

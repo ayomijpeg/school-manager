@@ -139,8 +139,14 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
          </div>
          
          {invoices.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
-                <p>No invoices found matching your criteria.</p>
+            <div className="flex-1 flex flex-col items-center justify-center py-20 px-4">
+              <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400 dark:text-slate-500">
+                <Receipt className="w-8 h-8" />
+              </div>
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">No invoices found</h3>
+              <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-2 text-center">
+                {query ? `No invoices match "${query}". Try a different search.` : 'Create your first invoice using the "Create Invoice" button above.'}
+              </p>
             </div>
          ) : (
              <InvoiceList initialInvoices={invoices} />

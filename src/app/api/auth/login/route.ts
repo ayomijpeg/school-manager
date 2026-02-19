@@ -2,8 +2,9 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
-import { SignJWT } from 'jose'; 
+import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -11,6 +12,14 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit(request);
+  if (!rateLimit.ok) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429, headers: rateLimit.retryAfter ? { 'Retry-After': String(rateLimit.retryAfter) } : undefined }
+    );
+  }
+
   try {
     const body = await request.json();
     const { email, password } = loginSchema.parse(body);
@@ -75,7 +84,9 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error("Login Error:", error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Login error:', error);
+    }
     return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -37,6 +37,38 @@ export default function Header({ schoolConfig, onMenuClick }: HeaderProps) {
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [globalQuery, setGlobalQuery] = useState('');
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Focus trap and Escape for user dropdown (a11y)
+  useEffect(() => {
+    if (!showUserMenu || !userMenuRef.current) return;
+    const menu = userMenuRef.current;
+    const focusables = menu.querySelectorAll<HTMLElement>('button, [href]');
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    first?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowUserMenu(false);
+        return;
+      }
+      if (e.key !== 'Tab' || focusables.length === 0) return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [showUserMenu]);
 
   const handleLogout = async () => {
     setShowUserMenu(false);
@@ -143,7 +175,9 @@ export default function Header({ schoolConfig, onMenuClick }: HeaderProps) {
         <div className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            aria-label="User Menu"
+            aria-label="User menu"
+            aria-expanded={showUserMenu}
+            aria-haspopup="true"
             className="flex items-center gap-3 p-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-900 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-all"
           >
             <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
@@ -163,9 +197,13 @@ export default function Header({ schoolConfig, onMenuClick }: HeaderProps) {
           {/* Dropdown Menu */}
           {showUserMenu && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowUserMenu(false)} />
-              
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-950 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 py-1 z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="fixed inset-0 z-10" onClick={() => setShowUserMenu(false)} aria-hidden="true" />
+              <div
+                ref={userMenuRef}
+                role="menu"
+                aria-label="User account menu"
+                className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-950 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 py-1 z-20 animate-in fade-in slide-in-from-top-2 duration-200"
+              >
                 
                 <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 md:hidden">
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{userEmail}</p>

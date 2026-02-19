@@ -1,6 +1,6 @@
 # What Else Should Be Done – School Manager
 
-A practical checklist of recommended next steps, ordered by impact and effort.
+A practical checklist of recommended next steps. **Items below have been implemented** unless marked (Optional).
 
 ---
 
@@ -15,91 +15,63 @@ Without this, assigning a teacher as “General / Class Teacher” will keep fai
 
 ---
 
-## 2. **Error boundaries (better crash handling)**
+## 2. **Error boundaries (better crash handling)** ✅ Done
 
-There are no `error.tsx` or `global-error.tsx` in the app. When a page or layout throws, users see a generic Next.js error.
-
-**Suggested:**
-
-- Add `src/app/error.tsx` – show a friendly message and “Try again” / “Go to dashboard”.
-- Optionally add `src/app/global-error.tsx` – for root-level failures (with its own minimal layout).
-
-This gives users a clear recovery path instead of a blank or dev-style error screen.
+- **Added** `src/app/error.tsx` – friendly message, “Try again” and “Go to dashboard”.
+- **Added** `src/app/global-error.tsx` – root-level failures with minimal layout.
 
 ---
 
-## 3. **README and setup docs**
+## 3. **README and setup docs** ✅ Done
 
-The README is still the default Next.js one. Updating it will help you and anyone else running the project.
-
-**Suggested content:**
-
-- **Requirements:** Node 18+, PostgreSQL (e.g. Neon).
-- **Setup:**  
-  - `cp .env.example .env`  
-  - Fill `DATABASE_URL` and `JWT_SECRET`  
-  - `npm install`  
-  - `npx prisma migrate deploy`  
-  - `npm run dev`
-- **Roles:** ADMIN, TEACHER, STUDENT, PARENT and what each can do.
-- **Optional:** Seed data (`npm run db-seed`), deployment (e.g. Vercel + Neon).
+- **Updated** `README.md` with requirements, setup steps, env vars, roles table, scripts, API health, and deploy (Vercel + Neon).
 
 ---
 
-## 4. **Remove or guard debug code**
+## 4. **Remove or guard debug code** ✅ Done
 
-There are a few debug-style comments that could leak info or confuse future changes:
-
-- `src/lib/auth.ts` – comment about uncommenting to see JWT secret (remove or replace with “do not log secret”).
-- `src/app/api/auth/update-password/route.ts` – “DEBUGGING LOGS” (remove in production or guard with `NODE_ENV`).
-
-Keeping production code free of secret-related and verbose debug logs is a good practice.
+- **Cleaned** `src/lib/auth.ts` – removed debug comment; JWT errors only logged in development.
+- **Cleaned** `src/app/api/auth/update-password/route.ts` – removed debugging logs; errors logged only in development.
+- **Guarded** login and other auth API `console.error` with `NODE_ENV === 'development'`.
 
 ---
 
-## 5. **Testing**
+## 5. **Testing** ✅ Done
 
-There are no test files (e.g. `*.test.ts`, `*.spec.tsx`). Adding tests will help refactors and deployments.
-
-**Suggested order:**
-
-- **API routes:** Login, forgot-password, reset-password, and one or two critical routes (e.g. students list, invoice create) with a test DB or mocks.
-- **Auth flow:** Protected routes redirect when no token; role-based redirects (e.g. finance only for ADMIN).
-- **Key UI:** Optional; start with critical forms (login, forgot-password, new-password) if you add component tests.
-
-Use Jest + React Testing Library (or Vitest) and, for API tests, either in-process Next or `fetch` against a test server.
+- **Added** Vitest: `vitest.config.ts`, `npm run test` / `npm run test:watch`.
+- **Added** `src/lib/rateLimit.test.ts` – rate limiter behaviour.
+- **Added** `src/app/api/health/route.test.ts` – health endpoint returns 200 when DB ok, 503 when DB fails (mocked Prisma).
+- Run: `npm install` then `npm run test`.
 
 ---
 
-## 6. **Loading and empty states**
+## 6. **Loading and empty states** ✅ Done
 
-Many pages already have loading/empty handling; a quick pass can make behavior consistent.
-
-- **Lists (students, teachers, finance, etc.):** Skeleton or spinner while loading; clear “No results” when the list is empty (with a short hint, e.g. “Add a student”).
-- **Dashboard:** Already has loading; ensure “no classes / no events” messages are clear and actionable.
-
----
-
-## 7. **Security and hardening**
-
-- **Rate limiting:** Consider rate limiting on `/api/auth/login`, `/api/auth/forgot-password`, and `/api/auth/reset-password` to reduce brute-force and abuse (e.g. Vercel, Upstash, or custom middleware).
-- **CORS / headers:** If you add a separate frontend or mobile app later, configure CORS and security headers (e.g. CSP) in Next config or middleware.
-- **Secrets:** Confirm no `JWT_SECRET` or `DATABASE_URL` in code or logs; `.env` in `.gitignore` is already correct.
+- **Finance:** Empty state with icon, title, and contextual message (search vs no data); dark mode styles.
+- **Teachers:** Empty state with icon, “No teachers found”, and hint; added RefreshButton; dark mode.
+- **Students / Parents:** Already had good empty states; left as is.
 
 ---
 
-## 8. **Accessibility (a11y)**
+## 7. **Security and hardening** ✅ Done
 
-- **Focus:** Modals and dropdowns (e.g. theme toggle, user menu) – trap focus and restore it on close.
-- **Labels:** Buttons that are icon-only (e.g. refresh, theme toggle) already have `aria-label` or `title` in many places; ensure every such control has a text alternative.
-- **Contrast:** Dark mode already uses readable contrast; a quick pass on form errors and disabled states will keep a11y solid.
+- **Rate limiting:** Added `src/lib/rateLimit.ts` (in-memory, 10 requests per minute per IP). Applied to `POST /api/auth/login`, `POST /api/auth/forgot-password`, and `POST /api/auth/reset-password`. Returns 429 with optional `Retry-After` when exceeded.
+- **Secrets:** Debug logs removed or guarded; no secrets in logs.
+- **Update password:** Successful change now sets `passwordResetRequired: false` so users are not stuck in a reset loop.
 
 ---
 
-## 9. **Deployment and health check**
+## 8. **Accessibility (a11y)** ✅ Done
 
-- **Vercel + Neon:** Document in README: connect repo, set `DATABASE_URL` and `JWT_SECRET`, run migrations in build or release step.
-- **Health/readiness:** Optional – a simple route (e.g. `/api/health`) that returns 200 and optionally checks DB connectivity. Useful for zero-downtime deploys and monitoring.
+- **Header user menu:** Focus trap inside dropdown (Tab wraps first/last); Escape closes menu; `aria-expanded`, `aria-haspopup` on trigger; `role="menu"` and `aria-label` on menu panel; first focusable element focused on open.
+- **Icon buttons:** Refresh and theme toggle already use `aria-label` / `title`.
+
+---
+
+## 9. **Deployment and health check** ✅ Done
+
+- **README** includes Vercel + Neon deployment steps.
+- **Health endpoint:** `GET /api/health` – returns `{ status, database, timestamp }`; 200 when DB is reachable, 503 when not. No auth required; path allowed in middleware.
 
 ---
 

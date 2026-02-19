@@ -8,14 +8,13 @@ export async function verifyJwt(token: string) {
       return null;
     }
     const secret = new TextEncoder().encode(secretKey);
-    
-    // DEBUG: Uncomment this if you are still stuck to see what secret is being used
-    // console.log("Verifying with secret:", secretKey);
 
     const { payload } = await jwtVerify(token, secret);
     return payload;
   } catch (error) {
-    console.error("JWT Verification Failed:", error); // <--- This will show up in your terminal
+    if (process.env.NODE_ENV === 'development') {
+      console.error('JWT verification failed:', error);
+    }
     return null;
   }
 }

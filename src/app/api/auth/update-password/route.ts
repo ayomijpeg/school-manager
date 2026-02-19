@@ -9,20 +9,15 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value || cookieStore.get('auth_token')?.value;
 
-    // --- DEBUGGING LOGS ---
-    console.log("1. Cookie Token:", token ? "Found" : "Missing");
-    
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized: No token found' }, { status: 401 });
     }
 
     const payload = await verifyJwt(token);
-    console.log("2. JWT Verification Result:", payload); // See if this is null
 
     if (!payload || !payload.sub) {
-       return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
     }
-    // ----------------------
 
     const body = await request.json();
     const { currentPassword, newPassword } = body;
@@ -45,13 +40,15 @@ export async function POST(request: Request) {
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash: newHashedPassword },
+      data: { passwordHash: newHashedPassword, passwordResetRequired: false },
     });
 
     return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error("Security Update Error:", error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Update password error:', error);
+    }
     return NextResponse.json({ error: 'Failed to update password' }, { status: 500 });
   }
 }
