@@ -14,6 +14,7 @@ type DashboardCounts = {
   teachers: number;
   classes: number;
   invoices: number;
+  pendingRevenue?: number;
 };
 
 type DashboardDataProps = {

@@ -1,29 +1,48 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { InvoiceStatus } from '@prisma/client'; // Import Enum for safety
+import { InvoiceStatus } from '@prisma/client';
+import { getCurrentUser } from '@/lib/session';
+import { Prisma } from '@prisma/client';
 
 type Props = { params: Promise<{ id: string }> };
 
 // DELETE INVOICE
 export async function DELETE(req: Request, props: Props) {
   try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const { id } = await props.params;
     await prisma.invoice.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch {
-    // Removed unused 'error' variable
-    return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    }
+    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
   }
 }
 
 // RECORD PAYMENT (PATCH)
 export async function PATCH(req: Request, props: Props) {
   try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const { id } = await props.params;
     const body = await req.json();
     const { amount, method, date } = body;
 
     const paymentAmount = Number(amount);
+    if (Number.isNaN(paymentAmount) || paymentAmount <= 0) {
+      return NextResponse.json({ error: 'Amount must be a positive number' }, { status: 400 });
+    }
+    const paymentDate = date ? new Date(date) : new Date();
+    if (Number.isNaN(paymentDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid payment date' }, { status: 400 });
+    }
 
     const result = await prisma.$transaction(async (tx) => {
         const invoice = await tx.invoice.findUnique({ where: { id } });
@@ -34,8 +53,8 @@ export async function PATCH(req: Request, props: Props) {
             data: {
                 invoiceId: id,
                 amountPaid: paymentAmount,
-                paymentDate: new Date(date),
-                paymentMethod: method,
+                paymentDate: paymentDate,
+                paymentMethod: method ?? undefined,
             }
         });
 

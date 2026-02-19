@@ -33,18 +33,24 @@ export default function WardCard({ ward }: { ward: any }) {
         </div>
 
         {/* Action Buttons with Links */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <Link 
-            href="/dashboard/results"
-            className="flex items-center justify-center gap-2 py-2 text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"
+            href={`/dashboard/students/${ward.id}`}
+            className="flex items-center justify-center gap-1.5 py-2 text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-all"
           >
-            <FileText size={14} /> Result
+            Profile
           </Link>
           <Link 
-            href="/dashboard/timetable"
-            className="flex items-center justify-center gap-2 py-2 text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"
+            href="/dashboard/results"
+            className="flex items-center justify-center gap-1.5 py-2 text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"
           >
-            <CalendarDays size={14} /> Schedule
+            <FileText size={12} /> Result
+          </Link>
+          <Link 
+            href="/dashboard/parents/timetable"
+            className="flex items-center justify-center gap-1.5 py-2 text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"
+          >
+            <CalendarDays size={12} /> Schedule
           </Link>
         </div>
       </div>

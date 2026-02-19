@@ -19,19 +19,19 @@ const createStudentSchema = z.object({
   gender: z.enum(['MALE', 'FEMALE']).optional(),
 });
 
-// Helper: Generate Matric Number
+// Helper: Generate short, memorable matric number (e.g. 25-001, 25-002)
 async function generateMatricNumber(tx: Prisma.TransactionClient) {
   const currentYear = new Date().getFullYear();
-  const prefix = 'STU'; 
-  
+  const yearShort = String(currentYear).slice(-2); // 2025 → 25
+
   const count = await tx.student.count({
     where: {
       createdAt: { gte: new Date(`${currentYear}-01-01`) },
     },
   });
-  
-  const sequence = (count + 1).toString().padStart(4, '0');
-  return `${currentYear}/${prefix}/${sequence}`;
+
+  const sequence = (count + 1).toString().padStart(3, '0'); // 001, 002, … 999
+  return `${yearShort}-${sequence}`;
 }
 
 // Helper: Generate Unique Email

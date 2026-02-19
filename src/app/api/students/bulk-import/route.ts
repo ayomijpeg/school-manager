@@ -76,16 +76,15 @@ export async function POST(req: Request) {
         continue;
       }
 
-      // C. Handle Matric Number
+      // C. Handle Matric Number (leave empty to auto-assign short YY-NNN later)
       let finalMatric = row.matricNumber?.trim();
-      if (!finalMatric) {
-        finalMatric = `ADM-${Date.now()}-${Math.floor(Math.random() * 1000) + i}`; 
-      } else {
+      if (finalMatric) {
         if (registeredMatrics.has(finalMatric)) {
           errors.push(`Row ${rowNum}: Matric Number ${finalMatric} already exists.`);
           continue;
         }
       }
+      // If empty, we assign a short matric (25-001 style) in step 5
 
       // D. Resolve LEVEL ID
       const levelId = levelMap.get(row.className?.toUpperCase());
@@ -105,30 +104,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, errors }, { status: 422 });
     }
 
-    // 5. EXECUTION PHASE
-    const defaultPassword = await bcrypt.hash('password123', 10); 
+    const defaultPassword = await bcrypt.hash('password123', 10);
+    const currentYear = new Date().getFullYear();
+    const yearShort = String(currentYear).slice(-2);
 
     await prisma.$transaction(async (tx) => {
+      // Get current year's student count inside transaction so auto-matrics are unique
+      const startOfYear = new Date(`${currentYear}-01-01`);
+      let nextSeq = await tx.student.count({
+        where: { createdAt: { gte: startOfYear } },
+      });
+
       for (const student of validStudents) {
-        
-        // A. Create User (Credentials Only)
+        let matric = student.matricNumber;
+        if (!matric) {
+          nextSeq += 1;
+          matric = `${yearShort}-${nextSeq.toString().padStart(3, '0')}`;
+        }
+
         const newUser = await tx.user.create({
           data: {
             email: student.email,
-            passwordHash: defaultPassword, 
+            passwordHash: defaultPassword,
             role: 'STUDENT',
           }
         });
 
-        // B. Create Student Profile
         await tx.student.create({
           data: {
             userId: newUser.id,
-            // firstName: REMOVED (Not in DB)
-            // lastName: REMOVED (Not in DB)
-            // gender: REMOVED (Not in DB)
-            fullName: `${student.firstName} ${student.lastName}`, 
-            matricNumber: student.matricNumber,
+            fullName: `${student.firstName} ${student.lastName}`,
+            matricNumber: matric,
             levelId: student.levelId
           }
         });

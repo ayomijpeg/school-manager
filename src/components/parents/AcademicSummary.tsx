@@ -1,16 +1,21 @@
 import React from 'react';
-import { Award, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
+import { Award, TrendingUp, FileText } from 'lucide-react';
 
 interface AcademicSummaryProps {
   results: any[];
 }
 
 export default function AcademicSummary({ results }: AcademicSummaryProps) {
-  // 🔴 CRITICAL FIX: Safety check for undefined or null results
   if (!results || !Array.isArray(results) || results.length === 0) {
     return (
       <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 text-center border border-slate-200 dark:border-slate-800">
-        <p className="text-slate-400 text-sm">No academic data available yet.</p>
+        <Award className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+        <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">No academic data yet</p>
+        <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">Results will appear here when teachers upload scores.</p>
+        <Link href="/dashboard/results" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 hover:underline">
+          <FileText size={14} /> View report cards
+        </Link>
       </div>
     );
   }

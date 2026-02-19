@@ -1,140 +1,255 @@
 import React from 'react';
+import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client'; // Import Prisma namespace
-import { 
-  Clock, 
-  CalendarDays, 
-  TrendingUp, 
-  BookOpen, 
-  MapPin, 
+import {
+  BookOpen,
+  Receipt,
+  FileText,
+  Calendar,
+  TrendingUp,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
-type Props = {
-  studentUserId: string;
-};
+type Props = { studentUserId: string };
 
-// 1. DEFINE THE "RICH" STUDENT TYPE
-// This tells TS: "This is a Student, BUT it also has Class, Results, Attendance, etc."
-type RichStudent = Prisma.StudentGetPayload<{
-  include: {
-    class: { 
-      include: { 
-        level: true,
-        teachers: { include: { teacher: true } }
-      } 
+async function loadStudent(studentUserId: string) {
+  return prisma.student.findUnique({
+    where: { userId: studentUserId, deletedAt: null },
+    include: {
+      level: true,
+      department: true,
+      enrollments: {
+        where: { academicYear: { not: '' } },
+        orderBy: { academicYear: 'desc' },
+        take: 1,
+        include: { class: { include: { level: true } } },
+      },
+      results: {
+        orderBy: { id: 'desc' },
+        take: 5,
+        include: { course: true, exam: true },
+      },
+      studentAttendance: {
+        where: { attendanceDate: { gte: new Date(new Date().getFullYear(), 0, 1) } },
+      },
+      invoices: { where: { status: { not: 'PAID' } }, orderBy: { dueDate: 'desc' }, take: 3 },
     },
-    attendance: true,
-    results: { include: { course: true } },
-    invoices: true
-  }
-}>;
+  });
+}
+
+function safeNum(value: unknown): number {
+  if (value == null) return 0;
+  if (typeof value === 'number' && !Number.isNaN(value)) return value;
+  const n = Number(value);
+  return Number.isNaN(n) ? 0 : n;
+}
 
 export default async function StudentDashboard({ studentUserId }: Props) {
-  // 2. FETCH DATA (Matches the Type definition above)
-  const student = await prisma.student.findUnique({
-    where: { userId: studentUserId },
-    include: {
-      class: { 
-        include: { 
-          level: true,
-          teachers: { include: { teacher: true } }
-        } 
-      },
-      attendance: {
-        where: {
-          date: {
-            gte: new Date(new Date().getFullYear(), 0, 1)
-          }
-        }
-      },
-      results: { 
-        orderBy: { createdAt: 'desc' }, 
-        take: 3,
-        include: { course: true } 
-      },
-      invoices: {
-        where: { status: { not: 'PAID' } }
-      }
-    },
-  }) as RichStudent | null; // Explicit cast to help TS if needed
-
-  if (!student) {
+  if (!studentUserId) {
     return (
-      <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl">
-        <h3 className="text-lg font-bold text-slate-700">Profile Not Found</h3>
-        <p className="text-slate-500">This user account is not linked to a student profile.</p>
+      <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+        <h3 className="text-lg font-bold text-slate-700">Session error</h3>
+        <p className="text-slate-500 mt-1">Please log in again.</p>
       </div>
     );
   }
 
-  // 3. LOGIC (Now type-safe)
-  const totalAttendanceRecords = student.attendance.length;
-  const presentCount = student.attendance.filter(a => a.status === 'PRESENT').length;
-  const attendanceRate = totalAttendanceRecords > 0 
-    ? Math.round((presentCount / totalAttendanceRecords) * 100) 
-    : 100;
+  let student: Awaited<ReturnType<typeof loadStudent>>;
+  try {
+    student = await loadStudent(studentUserId);
+  } catch (err) {
+    console.error('StudentDashboard load error:', err);
+    return (
+      <div className="p-8 text-center border-2 border-dashed border-amber-200 rounded-2xl bg-amber-50">
+        <h3 className="text-lg font-bold text-slate-700">Something went wrong</h3>
+        <p className="text-slate-500 mt-1">We couldn’t load your dashboard. Please try again or contact support.</p>
+      </div>
+    );
+  }
 
-  // Timetable Logic
-  const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-  const todayName = days[new Date().getDay()];
-  
-  const todaysClasses = student.classId ? await prisma.timetable.findMany({
-    where: {
-      classId: student.classId,
-      dayOfWeek: todayName,
-    },
-    include: { course: true },
-    orderBy: { startTime: 'asc' },
-  }) : [];
+  if (!student) {
+    return (
+      <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+        <h3 className="text-lg font-bold text-slate-700">Profile not found</h3>
+        <p className="text-slate-500 mt-1">This account is not linked to a student profile.</p>
+      </div>
+    );
+  }
 
-  const currentTime = new Date().toLocaleTimeString('en-US', { hour12: false });
-  const nextClass = todaysClasses.find(c => c.endTime > currentTime) || null;
-  const unpaidInvoices = student.invoices.length;
+  const firstName = student.fullName.split(' ')[0] || student.fullName;
+  const currentEnrollment = student.enrollments[0];
+  const classLabel = currentEnrollment?.class
+    ? `${currentEnrollment.class.level?.name ?? ''} ${currentEnrollment.class.name}`.trim()
+    : student.level?.name ?? 'Unassigned';
+
+  const totalAttendance = student.studentAttendance.length;
+  const presentCount = student.studentAttendance.filter((a) => a.status === 'PRESENT').length;
+  const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : null;
+
+  const unpaidBalance = student.invoices.reduce(
+    (sum, inv) => sum + (safeNum(inv.totalAmount) - safeNum(inv.amountPaid)),
+    0
+  );
+
+  const greeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
-       {/* HEADER */}
-       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center text-2xl font-bold text-emerald-700 dark:text-emerald-400 font-serif border-2 border-white dark:border-slate-800 shadow-sm">
-            {student.firstName.charAt(0)}{student.lastName.charAt(0)}
+          <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center text-2xl font-bold text-emerald-800 border border-emerald-200">
+            {student.fullName
+              .split(' ')
+              .map((n) => n[0])
+              .join('')
+              .slice(0, 2)
+              .toUpperCase()}
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-              Good Morning, {student.firstName}
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+              {greeting()}, {firstName}
             </h1>
-            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mt-1 text-sm font-medium">
-              <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-300">
-                {student.class ? `${student.class.level.name} ${student.class.name}` : 'Unassigned'}
-              </span>
-              <span>•</span>
-              <span>{format(new Date(), 'EEEE, MMMM do')}</span>
-            </div>
+            <p className="text-slate-500 text-sm mt-0.5">
+              {classLabel} • {format(new Date(), 'EEEE, MMM d')}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* DASHBOARD CONTENT */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-         {/* ... (Keep your exact grid layout from the previous extensive code) ... */}
-         {/* I'm abbreviating here to save space, but you use the EXACT JSX I gave you before. */}
-         {/* The critical fix was the 'RichStudent' type definition above. */}
-         
-         {/* Example usage of typed data: */}
-         <div className="md:col-span-8 space-y-6">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800">
-                <h3 className="font-bold mb-4">Recent Results</h3>
-                {student.results.map(r => (
-                    <div key={r.id} className="flex justify-between border-b py-2">
-                        <span>{r.course.title}</span>
-                        <span className="font-bold">{r.grade}</span>
-                    </div>
-                ))}
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {attendanceRate !== null && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4 shadow-sm">
+            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
-         </div>
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase">Attendance</p>
+              <p className="text-xl font-bold text-slate-900">{attendanceRate}%</p>
+              <p className="text-xs text-slate-500">This term</p>
+            </div>
+          </div>
+        )}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4 shadow-sm">
+          <div className="p-3 rounded-xl bg-amber-50 text-amber-700">
+            <Receipt className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase">Balance due</p>
+            <p className="text-xl font-bold text-slate-900">₦ {unpaidBalance.toLocaleString()}</p>
+            <p className="text-xs text-slate-500">{student.invoices.length} unpaid</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4 shadow-sm">
+          <div className="p-3 rounded-xl bg-blue-50 text-blue-700">
+            <FileText className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase">Results</p>
+            <p className="text-xl font-bold text-slate-900">{student.results.length} recent</p>
+            <Link href="/dashboard/results" className="text-xs text-emerald-600 hover:underline font-medium">
+              View report card
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main: Recent results */}
+        <div className="lg:col-span-2 space-y-6">
+          <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+              <TrendingUp className="w-5 h-5 text-emerald-600" /> Recent results
+            </h2>
+            {student.results.length === 0 ? (
+              <div className="py-8 text-center text-slate-500 text-sm border-2 border-dashed border-slate-100 rounded-xl">
+                No results yet. They will appear here after your teachers upload scores.
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {student.results.map((r) => (
+                  <li key={r.id} className="py-3 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-slate-800">{r.course?.name ?? 'Course'}</p>
+                      <p className="text-xs text-slate-500">{r.exam?.name ?? 'Assessment'}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold text-slate-900">{r.grade ?? '—'}</span>
+                      <span className="text-slate-500 text-sm ml-1">({safeNum(r.totalScore)}%)</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link href="/dashboard/results" className="mt-4 inline-block text-sm font-medium text-emerald-700 hover:underline">
+              View full report card →
+            </Link>
+          </section>
+
+          {/* Pending invoices */}
+          {student.invoices.length > 0 && (
+            <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+                <AlertCircle className="w-5 h-5 text-amber-600" /> Pending invoices
+              </h2>
+              <ul className="space-y-2">
+                {student.invoices.map((inv) => (
+                  <li key={inv.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                    <span className="font-mono text-sm text-slate-600">{inv.invoiceNumber}</span>
+                    <span className="font-medium">₦ {(safeNum(inv.totalAmount) - safeNum(inv.amountPaid)).toLocaleString()}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/dashboard/billing" className="mt-4 inline-block text-sm font-medium text-emerald-700 hover:underline">
+                Pay or view all →
+              </Link>
+            </section>
+          )}
+        </div>
+
+        {/* Sidebar: Quick links */}
+        <div className="space-y-6">
+          <div className="bg-slate-50 rounded-2xl border border-slate-100 p-6">
+            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Quick links</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/dashboard/results"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-xl text-slate-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all"
+                >
+                  <FileText className="w-5 h-5 text-emerald-600" />
+                  <span className="font-medium">Report card</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/dashboard/billing"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-xl text-slate-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all"
+                >
+                  <Receipt className="w-5 h-5 text-emerald-600" />
+                  <span className="font-medium">My invoices</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/dashboard/parents/timetable"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-xl text-slate-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all"
+                >
+                  <Calendar className="w-5 h-5 text-emerald-600" />
+                  <span className="font-medium">Timetable</span>
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );

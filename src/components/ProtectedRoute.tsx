@@ -48,11 +48,10 @@ export default function ProtectedRoute({
     }
 
     // --- Redirect if Password Change Required ---
-    // Only check if the user *is* authenticated
-    if (isAuthenticated && user?.passwordResetRequired && pathname !== ROUTES.CHANGE_PASSWORD) {
+    // Only check if the user *is* authenticated (actual page is /auth/new-password)
+    if (isAuthenticated && user?.passwordResetRequired && pathname !== ROUTES.NEW_PASSWORD && pathname !== ROUTES.CHANGE_PASSWORD) {
         console.log('[ProtectedRoute] Password change required, redirecting...');
-        // Ensure ROUTES.CHANGE_PASSWORD is correct
-        router.push(ROUTES.CHANGE_PASSWORD);
+        router.push(ROUTES.NEW_PASSWORD);
         return; // Stop further checks
     }
 
@@ -72,8 +71,8 @@ export default function ProtectedRoute({
   if (
     (requireAuth && !isAuthenticated) ||
     (isAuthenticated && user && allowedRoles && !allowedRoles.includes(user.role)) ||
-    (isAuthenticated && user?.passwordResetRequired && pathname !== ROUTES.CHANGE_PASSWORD)
-    ) {
+    (isAuthenticated && user?.passwordResetRequired && pathname !== ROUTES.NEW_PASSWORD && pathname !== ROUTES.CHANGE_PASSWORD)
+  ) {
     console.log('[ProtectedRoute] Rendering null while redirect occurs...');
     return null; // Don't render children while redirecting
   }

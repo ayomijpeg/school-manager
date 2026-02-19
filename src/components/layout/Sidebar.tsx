@@ -78,10 +78,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   
   const teacherLinks = [
     { href: '/dashboard/teachers/classes', label: 'My Classes', icon: School },
-    { href:'/dashboard/teachers/attendance', label: 'Attendance', icon: ClipboardCheck },
-    { href: '/dashboard/teachers/results', label: 'Enter Results', icon: FileText }, // Teachers enter results
+    { href: '/dashboard/teachers/attendance', label: 'Attendance', icon: ClipboardCheck },
+    { href: '/dashboard/teachers/results', label: 'Enter Results', icon: FileText },
     { href: '/dashboard/teachers/timetable', label: 'My Schedule', icon: CalendarDays },
-    
+    { href: ROUTES.EVENTS, label: 'Events', icon: Calendar },
   ];
   
   const studentParentLinks = [

@@ -1,22 +1,25 @@
 import Link from "next/link";
 import { ArrowLeft } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import RecordPaymentButton from '@/components/finance/RecordPaymentButton';
 import PrintButton from '@/components/finance/PrintButton';
+import DeleteInvoiceButton from '@/components/finance/DeleteInvoiceButton';
+import { getCurrentUser } from '@/lib/session';
 
 export default async function InvoiceDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ADMIN') redirect('/dashboard');
   const { id } = await params;
-  
-  // Fetch Data
+
   const [invoice, config] = await Promise.all([
       prisma.invoice.findUnique({
         where: { id },
-        include: { 
-            student: { include: { level: true } }, 
-            invoiceItems: true, 
-            payments: true 
+        include: {
+          student: { include: { level: true } },
+          invoiceItems: true,
+          payments: true
         }
       }),
       prisma.schoolConfig.findFirst()
@@ -35,10 +38,10 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
           </Link>
        </div>
        {/* ACTION BAR */}
-       <div className="flex justify-between items-center mb-8 print:hidden">
-          <div className="flex gap-2">
-             {/* FIXED: Using Client Component here */}
+       <div className="flex flex-wrap justify-between items-center gap-4 mb-8 print:hidden">
+          <div className="flex flex-wrap gap-2">
              <PrintButton />
+             <DeleteInvoiceButton invoiceId={invoice.id} invoiceNumber={invoice.invoiceNumber} />
           </div>
           {!isPaid && (
              <RecordPaymentButton invoiceId={invoice.id} balance={balance} />

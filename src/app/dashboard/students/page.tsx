@@ -137,15 +137,17 @@ export default async function StudentListPage({
                     <tr key={student.id} className="group hover:bg-slate-50/80 transition-colors">
                       <td className="py-4 pl-6 pr-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold border border-emerald-200">
-                            {getInitials(student.fullName)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-slate-900">{student.fullName}</p>
-                            <p className="text-xs text-slate-500 hidden sm:block">
-                               {student.user?.email || 'No email'}
-                            </p>
-                          </div>
+                          <Link href={`/dashboard/students/${student.id}`} className="flex items-center gap-3 group/name">
+                            <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold border border-emerald-200 group-hover/name:bg-emerald-200 transition-colors">
+                              {getInitials(student.fullName)}
+                            </div>
+                            <div>
+                              <p className="font-medium text-slate-900 group-hover/name:text-emerald-800">{student.fullName}</p>
+                              <p className="text-xs text-slate-500 hidden sm:block">
+                                {student.user?.email || 'No email'}
+                              </p>
+                            </div>
+                          </Link>
                         </div>
                       </td>
 

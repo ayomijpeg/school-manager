@@ -2,7 +2,11 @@ import { jwtVerify } from 'jose';
 
 export async function verifyJwt(token: string) {
   try {
-    const secretKey = process.env.JWT_SECRET || 'default-secret-key';
+    const secretKey = process.env.JWT_SECRET;
+    if (!secretKey) {
+      console.error('JWT_SECRET is not set; refusing to verify token.');
+      return null;
+    }
     const secret = new TextEncoder().encode(secretKey);
     
     // DEBUG: Uncomment this if you are still stuck to see what secret is being used

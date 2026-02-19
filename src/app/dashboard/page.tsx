@@ -14,6 +14,7 @@ type DashboardCounts = {
   teachers: number;
   classes: number;
   invoices: number;
+  pendingRevenue?: number;
 } | null;
 
 type DashboardData = 
@@ -37,15 +38,23 @@ async function getDashboardData(): Promise<DashboardData> {
     
     // Only fetch expensive stats if the user is an Admin
     if (user.role === 'ADMIN') {
-        const [studentCount, teacherCount] = await Promise.all([
+        const [studentCount, teacherCount, classCount, invoiceAgg] = await Promise.all([
             prisma.student.count({ where: { deletedAt: null } }),
             prisma.teacher.count(),
+            prisma.class.count(),
+            prisma.invoice.aggregate({
+              where: { status: { in: ['PENDING', 'OVERDUE', 'PARTIALLY_PAID'] } },
+              _sum: { totalAmount: true, amountPaid: true },
+            }),
         ]);
-        counts = { 
-          students: studentCount, 
-          teachers: teacherCount, 
-          classes: 0, 
-          invoices: 0 
+        const pendingRevenue = Number(invoiceAgg._sum.totalAmount ?? 0) - Number(invoiceAgg._sum.amountPaid ?? 0);
+        const pendingCount = await prisma.invoice.count({ where: { status: { in: ['PENDING', 'OVERDUE'] } } });
+        counts = {
+          students: studentCount,
+          teachers: teacherCount,
+          classes: classCount,
+          invoices: pendingCount,
+          pendingRevenue,
         };
     }
 

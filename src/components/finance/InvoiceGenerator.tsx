@@ -1,27 +1,29 @@
 'use client';
 
 import { useState } from 'react';
+import type { ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Trash2, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Define Prop Type
+type ItemRow = { description: string; amount: string };
+
 interface InvoiceGeneratorProps {
-    levels: { id: string; name: string }[];
+  levels: { id: string; name: string }[];
 }
 
 export default function InvoiceGenerator({ levels }: InvoiceGeneratorProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const [targetType, setTargetType] = useState('CLASS'); 
+
+  const [targetType, setTargetType] = useState('CLASS');
   const [targetId, setTargetId] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [items, setItems] = useState([{ description: '', amount: '' }]);
+  const [items, setItems] = useState<ItemRow[]>([{ description: '', amount: '' }]);
 
   const addItem = () => setItems([...items, { description: '', amount: '' }]);
-  const removeItem = (idx: number) => setItems(items.filter((_, i) => i !== idx));
+  const removeItem = (idx: number) => setItems(items.filter((_: ItemRow, i: number) => i !== idx));
   
   const updateItem = (idx: number, field: 'description' | 'amount', val: string) => {
       const newItems = [...items];
@@ -31,11 +33,12 @@ export default function InvoiceGenerator({ levels }: InvoiceGeneratorProps) {
   };
 
   const handleSubmit = async () => {
-      if(!dueDate) return toast.error("Please select a Due Date");
-      if(targetType === 'CLASS' && !targetId) {
-          return toast.error("Please select a Level");
+      if (!dueDate) return toast.error("Please select a Due Date");
+      if (targetType === 'CLASS' && !targetId) return toast.error("Please select a Level");
+      const validItems = items.filter((i) => (i.description?.trim() ?? '') !== '' && Number(i.amount) > 0);
+      if (validItems.length === 0) {
+        return toast.error("Add at least one line item with a description and amount greater than 0.");
       }
-      
       setIsLoading(true);
       try {
         const res = await fetch('/api/finance/invoices/bulk', {
@@ -45,18 +48,22 @@ export default function InvoiceGenerator({ levels }: InvoiceGeneratorProps) {
                 targetType,
                 targetId: targetType === 'ALL' ? undefined : targetId,
                 dueDate,
-                items
+                items: validItems
             })
         });
         
-        if(!res.ok) throw new Error("Failed");
         const data = await res.json();
-        
-        toast.success(`Generated ${data.count} invoices successfully!`);
+        if (!res.ok) {
+          toast.error(data.error || "Generation failed.");
+          return;
+        }
+        const msg = data.skipped
+          ? `Created ${data.count} invoices. ${data.skipped} students already had an invoice for this due date and were skipped.`
+          : `Generated ${data.count} invoices successfully!`;
+        toast.success(msg);
         setIsOpen(false);
         router.refresh();
-      } catch(e) {
-        // Log error to console for debugging, but toast for user
+      } catch (e) {
         console.error(e);
         toast.error("Generation failed.");
       } finally {
@@ -91,7 +98,7 @@ export default function InvoiceGenerator({ levels }: InvoiceGeneratorProps) {
                         <select 
                            id="target-type"
                            className="w-full border rounded-lg p-2.5 bg-slate-50 mt-1" 
-                           value={targetType} onChange={e => setTargetType(e.target.value)}
+                           value={targetType} onChange={(e: ChangeEvent<HTMLSelectElement>) => setTargetType(e.target.value)}
                         >
                            <option value="CLASS">Entire Level/Class</option>
                            <option value="ALL">Whole School</option>
@@ -103,7 +110,7 @@ export default function InvoiceGenerator({ levels }: InvoiceGeneratorProps) {
                             <select 
                                id="target-id"
                                className="w-full border rounded-lg p-2.5 bg-slate-50 mt-1" 
-                               value={targetId} onChange={e => setTargetId(e.target.value)}
+                               value={targetId} onChange={(e: ChangeEvent<HTMLSelectElement>) => setTargetId(e.target.value)}
                             >
                                <option value="">Select...</option>
                                {levels.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
@@ -118,7 +125,7 @@ export default function InvoiceGenerator({ levels }: InvoiceGeneratorProps) {
                        id="due-date"
                        type="date" 
                        className="w-full border rounded-lg p-2.5 bg-slate-50 mt-1"
-                       value={dueDate} onChange={e => setDueDate(e.target.value)} 
+                       value={dueDate} onChange={(e: ChangeEvent<HTMLInputElement>) => setDueDate(e.target.value)} 
                     />
                  </div>
 
@@ -128,21 +135,21 @@ export default function InvoiceGenerator({ levels }: InvoiceGeneratorProps) {
                         <button onClick={addItem} className="text-xs text-emerald-700 font-bold hover:underline">+ Add Item</button>
                     </div>
                     <div className="space-y-3">
-                        {items.map((item, idx) => (
+                        {items.map((item: ItemRow, idx: number) => (
                             <div key={idx} className="flex gap-3">
                                 {/* FIXED: Added aria-labels for inputs */}
                                 <input 
                                    aria-label={`Item ${idx + 1} description`}
                                    placeholder="Description (e.g. Tuition)" 
                                    className="flex-1 border rounded-lg p-2 text-sm"
-                                   value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} 
+                                   value={item.description} onChange={(e: ChangeEvent<HTMLInputElement>) => updateItem(idx, 'description', e.target.value)} 
                                 />
                                 <input 
                                    aria-label={`Item ${idx + 1} amount`}
                                    placeholder="Amount" 
                                    type="number" 
                                    className="w-32 border rounded-lg p-2 text-sm"
-                                   value={item.amount} onChange={e => updateItem(idx, 'amount', e.target.value)} 
+                                   value={item.amount} onChange={(e: ChangeEvent<HTMLInputElement>) => updateItem(idx, 'amount', e.target.value)} 
                                 />
                                 {items.length > 1 && (
                                     <button 
@@ -157,7 +164,7 @@ export default function InvoiceGenerator({ levels }: InvoiceGeneratorProps) {
                         ))}
                     </div>
                     <div className="mt-2 text-right text-sm font-bold text-slate-900">
-                        Total: ₦{items.reduce((s, i) => s + Number(i.amount), 0).toLocaleString()}
+                        Total: ₦{items.reduce((s: number, i: ItemRow) => s + Number(i.amount), 0).toLocaleString()}
                     </div>
                  </div>
 

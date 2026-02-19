@@ -1,53 +1,72 @@
 import { prisma } from '@/lib/prisma';
-import { verifyJwt } from '@/lib/auth'; // ✅ Correct import for your setup
-import { cookies } from 'next/headers'; // ✅ access cookies manually
+import { getCurrentUser } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { User, FileText, ClipboardCheck } from 'lucide-react';
 
-export default async function MyClassesPage() {
-  // 1. Manually check for the token
-  const cookieStore = await cookies();
-  const token = cookieStore.get('token')?.value;
-
-  // 2. Verify the session
-  const payload = token ? await verifyJwt(token) : null;
-  
-  if (!payload) {
-    redirect('/auth/login'); // Redirect if not logged in
-  }
-
-  // Get User ID from your token payload (sub or id)
-  const userId = (payload.sub || payload.id) as string;
-
-  // 3. Get the Teacher Profile linked to the logged-in User
-  const teacher = await prisma.teacher.findUnique({
-    where: { userId: userId },
+async function loadTeacher(userId: string) {
+  return prisma.teacher.findUnique({
+    where: { userId, deletedAt: null },
   });
+}
 
-  if (!teacher) {
+async function loadAssignments(teacherId: string) {
+  return prisma.classAssignment.findMany({
+    where: { teacherId },
+    include: {
+      class: { include: { _count: { select: { enrollments: true } } } },
+      course: true,
+    },
+  });
+}
+
+export default async function MyClassesPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect('/auth/login');
+
+  let teacher: Awaited<ReturnType<typeof loadTeacher>>;
+  let assignments: Awaited<ReturnType<typeof loadAssignments>>;
+
+  try {
+    teacher = await loadTeacher(user.id);
+  } catch (err) {
+    console.error('MyClassesPage load error:', err);
     return (
-      <div className="p-8 text-center border-2 border-red-100 bg-red-50 rounded-xl text-red-600">
-        <h3 className="font-bold">Profile Not Found</h3>
-        <p className="text-sm mt-1">
-            This account is not linked to a Teacher profile. Please contact the administrator.
-        </p>
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="p-8 text-center border-2 border-amber-200 bg-amber-50 rounded-xl text-amber-800">
+          <h3 className="font-bold">Something went wrong</h3>
+          <p className="text-sm mt-1">We couldn’t load your classes. Please try again or contact support.</p>
+          <Link href="/dashboard/teachers" className="inline-block mt-4 text-sm font-medium text-amber-700 hover:underline">Back to dashboard</Link>
+        </div>
       </div>
     );
   }
 
-  // 4. Fetch Classes Assigned to this Teacher
-  const assignments = await prisma.classAssignment.findMany({
-    where: { teacherId: teacher.id },
-    include: {
-      class: { 
-        include: { 
-          _count: { select: { enrollments: true } } // Counts students automatically
-        } 
-      },
-      course: true,
-    }
-  });
+  if (!teacher) {
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="p-8 text-center border-2 border-red-100 bg-red-50 rounded-xl text-red-600">
+          <h3 className="font-bold">Profile Not Found</h3>
+          <p className="text-sm mt-1">This account is not linked to a Teacher profile. Please contact the administrator.</p>
+          <Link href="/dashboard" className="inline-block mt-4 text-sm font-medium text-red-700 hover:underline">Back to dashboard</Link>
+        </div>
+      </div>
+    );
+  }
+
+  try {
+    assignments = await loadAssignments(teacher.id);
+  } catch (err) {
+    console.error('MyClassesPage assignments error:', err);
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="p-8 text-center border-2 border-amber-200 bg-amber-50 rounded-xl text-amber-800">
+          <h3 className="font-bold">Something went wrong</h3>
+          <p className="text-sm mt-1">We couldn’t load your class list. Please try again.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -78,7 +97,7 @@ export default async function MyClassesPage() {
             <div className="grid grid-cols-2 gap-3">
               {/* This link points to the Result Entry page */}
               <Link 
-                href={`/dashboard/teacher/results/${assign.class.id}?courseId=${assign.course.id}`}
+                href={`/dashboard/teachers/results/${assign.class.id}?courseId=${assign.course.id}`}
                 className="flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 <FileText size={16} />
@@ -86,7 +105,7 @@ export default async function MyClassesPage() {
               </Link>
               
               <Link
-                href={`/dashboard/teacher/attendance/${assign.class.id}?courseId=${assign.course.id}`}
+                href={`/dashboard/teachers/attendance/${assign.class.id}?courseId=${assign.course.id}`}
                 className="flex items-center justify-center gap-2 px-3 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg transition-colors"
               >
                 <ClipboardCheck size={16} />

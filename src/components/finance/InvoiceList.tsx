@@ -1,8 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { MoreHorizontal } from 'lucide-react'; // Removed FileText
+import { MoreHorizontal, ExternalLink } from 'lucide-react';
+import DeleteInvoiceButton from '@/components/finance/DeleteInvoiceButton';
 
 // Define a minimal type for the invoice data we use
 interface InvoiceListItem {
@@ -19,6 +21,7 @@ interface InvoiceListItem {
 
 export default function InvoiceList({ initialInvoices }: { initialInvoices: InvoiceListItem[] }) {
   const router = useRouter();
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   if (initialInvoices.length === 0) {
     return (
@@ -38,15 +41,15 @@ export default function InvoiceList({ initialInvoices }: { initialInvoices: Invo
             <th className="py-3 px-4 text-xs font-bold uppercase text-slate-500">Amount</th>
             <th className="py-3 px-4 text-xs font-bold uppercase text-slate-500">Status</th>
             <th className="py-3 px-4 text-xs font-bold uppercase text-slate-500">Due Date</th>
-            <th className="py-3 px-4"></th>
+            <th className="py-3 px-4 w-12"></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {initialInvoices.map((inv) => (
-            <tr 
-                key={inv.id} 
-                onClick={() => router.push(`/dashboard/finance/${inv.id}`)}
-                className="group hover:bg-slate-50 cursor-pointer transition-colors"
+            <tr
+                key={inv.id}
+                onClick={() => openMenuId !== inv.id && router.push(`/dashboard/finance/${inv.id}`)}
+                className="group hover:bg-slate-50 cursor-pointer transition-colors relative"
             >
               <td className="py-3 pl-6 pr-4 font-mono text-xs text-slate-600">
                 {inv.invoiceNumber}
@@ -64,8 +67,32 @@ export default function InvoiceList({ initialInvoices }: { initialInvoices: Invo
               <td className="py-3 px-4 text-xs text-slate-500">
                 {formatDate(inv.dueDate)}
               </td>
-              <td className="py-3 px-4 text-right">
-                 <MoreHorizontal className="w-4 h-4 text-slate-300 group-hover:text-emerald-600" />
+              <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                <div className="relative inline-block">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === inv.id ? null : inv.id); }}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                    aria-label="Actions"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                  {openMenuId === inv.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} aria-hidden="true" />
+                      <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] bg-white border border-slate-200 rounded-xl shadow-lg py-1">
+                        <button
+                          type="button"
+                          onClick={() => { setOpenMenuId(null); router.push(`/dashboard/finance/${inv.id}`); }}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-lg"
+                        >
+                          <ExternalLink size={14} /> View invoice
+                        </button>
+                        <DeleteInvoiceButton invoiceId={inv.id} invoiceNumber={inv.invoiceNumber} variant="menuitem" onDeleted={() => setOpenMenuId(null)} onConfirmOpen={() => setOpenMenuId(null)} />
+                      </div>
+                    </>
+                  )}
+                </div>
               </td>
             </tr>
           ))}

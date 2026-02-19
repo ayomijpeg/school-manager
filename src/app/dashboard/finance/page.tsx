@@ -1,19 +1,21 @@
 import { prisma } from '@/lib/prisma';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Wallet, AlertCircle, CheckCircle2, LucideIcon, Search, ClipboardCheck, Printer } from 'lucide-react';
 import InvoiceGenerator from '@/components/finance/InvoiceGenerator';
-import InvoiceList from '@/components/finance/InvoiceList'; 
+import InvoiceList from '@/components/finance/InvoiceList';
 import PaymentSettingsModal from '@/components/finance/PaymentSettingsModal';
-import TablePagination from '@/components/ui/TablePagination'; 
+import TablePagination from '@/components/ui/TablePagination';
 import { formatCurrency } from '@/lib/utils';
+import { getCurrentUser } from '@/lib/session';
 
-// Define Props for SearchParams (Next.js 15 Standard)
 type SearchParams = Promise<{ page?: string; query?: string }>;
 
-// 🔴 REMOVED: Unused Interface 'PaymentSettingsModalProps' was causing both errors.
-
 export default async function FinancePage({ searchParams }: { searchParams: SearchParams }) {
-  // 1. Parse URL Params
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ADMIN') {
+    redirect('/dashboard');
+  }
   const params = await searchParams;
   const currentPage = Number(params.page) || 1;
   const query = params.query || '';

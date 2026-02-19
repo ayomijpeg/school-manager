@@ -6,15 +6,36 @@ const PUBLIC_PATHS = [
   '/auth/login',
   '/auth/register',
   '/auth/forgot-password',
-  '/auth/new-password', // Add this (user needs to set password after setup)
-  '/setup',             // Add this (CRITICAL: you need to create the admin account)
+  '/auth/reset-password',
+  '/auth/new-password',
+  '/setup',
   '/api/auth/login',
   '/api/auth/logout',
-  '/api/setup'          // Allow the setup API too
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+  '/api/setup'
 ];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // 0. Redirect old or wrong dashboard paths so they don't 404
+  if (pathname === '/dashboard/teacher' || pathname.startsWith('/dashboard/teacher/')) {
+    const rest = pathname === '/dashboard/teacher' ? '' : pathname.slice('/dashboard/teacher'.length);
+    return NextResponse.redirect(new URL(`/dashboard/teachers${rest}`, req.url));
+  }
+  if (pathname === '/dashboard/attendance') {
+    return NextResponse.redirect(new URL('/dashboard/teachers/attendance', req.url));
+  }
+  if (pathname === '/dashboard/finance/invoice') {
+    return NextResponse.redirect(new URL('/dashboard/finance', req.url));
+  }
+  if (pathname === '/settings' && !pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/dashboard/settings', req.url));
+  }
+  if (pathname === '/dashboard/admin/teachers') {
+    return NextResponse.redirect(new URL('/dashboard/teachers', req.url));
+  }
 
   // 1. Skip public paths, static assets, AND THE LANDING PAGE
   if (

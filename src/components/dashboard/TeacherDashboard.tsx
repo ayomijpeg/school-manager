@@ -1,15 +1,20 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { 
-  Users, BookOpen, Calendar, ArrowRight, 
-  Clock, FileText, CheckCircle2, Loader2, Sparkles,
-  LucideIcon 
+import {
+  Users,
+  BookOpen,
+  Calendar,
+  ArrowRight,
+  Clock,
+  FileText,
+  CheckCircle2,
+  Loader2,
+  CalendarDays,
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
-// 1. Define Data Types
 type DashboardData = {
   profile: { name: string; staffId: string };
   stats: { totalClasses: number; totalStudents: number };
@@ -28,7 +33,6 @@ type DashboardData = {
   }>;
 };
 
-// 2. Component Definition (Removed unused 'user' prop)
 export default function TeacherDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,8 +41,8 @@ export default function TeacherDashboard() {
   useEffect(() => {
     async function fetchDashboard() {
       try {
-        const res = await fetch('/api/dashboard/teacher'); 
-        if (!res.ok) throw new Error("Failed to fetch dashboard data");
+        const res = await fetch('/api/dashboard/teacher');
+        if (!res.ok) throw new Error('Failed to fetch dashboard data');
         const json = await res.json();
         setData(json);
       } catch (err) {
@@ -53,21 +57,21 @@ export default function TeacherDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-400">
-        <Loader2 className="w-10 h-10 animate-spin mb-3 text-indigo-500" />
-        <p className="text-sm font-medium">Setting up your workspace...</p>
+      <div className="min-h-[50vh] flex flex-col items-center justify-center text-slate-500">
+        <Loader2 className="w-10 h-10 animate-spin text-emerald-600 mb-3" />
+        <p className="text-sm font-medium">Loading your workspace...</p>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="p-8 text-center border-2 border-dashed border-red-200 bg-red-50 rounded-xl text-red-600 max-w-2xl mx-auto mt-10">
-        <p className="font-semibold">Unable to load dashboard.</p>
-        <p className="text-sm mt-1 mb-4">We couldn&apos;t fetch your classes. Please check your internet connection.</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="px-4 py-2 bg-white border border-red-200 rounded-lg text-sm hover:bg-red-100 transition-colors"
+      <div className="p-8 text-center border-2 border-dashed border-red-200 bg-red-50 rounded-2xl text-red-700 max-w-xl mx-auto">
+        <p className="font-semibold">Unable to load dashboard</p>
+        <p className="text-sm mt-1 mb-4">We couldn&apos;t fetch your classes. Check your connection and try again.</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-white border border-red-200 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors"
         >
           Retry
         </button>
@@ -77,140 +81,119 @@ export default function TeacherDashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      
-      {/* Banner: Updated bg-gradient-to-r to bg-linear-to-r for Tailwind v4 compatibility */}
-      <div className="bg-linear-to-r from-indigo-600 to-violet-700 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+      {/* Welcome banner */}
+      <div className="bg-gradient-to-r from-emerald-800 to-emerald-900 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2 text-indigo-200 text-sm font-medium uppercase tracking-wider">
-            <Sparkles className="w-4 h-4" /> Teacher Portal
-          </div>
-          <h1 className="text-3xl font-bold">Welcome back, {data.profile.name}</h1>
-          <p className="text-indigo-100 mt-2 text-lg opacity-90 font-light">
-            Today is {format(new Date(), 'EEEE, MMMM do')} • Staff ID: <span className="font-mono bg-white/20 px-2 py-0.5 rounded text-sm">{data.profile.staffId}</span>
+          <p className="text-emerald-200 text-sm font-medium uppercase tracking-wider mb-1">Teacher portal</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Welcome back, {data.profile.name}</h1>
+          <p className="text-emerald-100 mt-2 text-sm sm:text-base">
+            {format(new Date(), 'EEEE, MMMM d')} • Staff ID: <span className="font-mono bg-white/20 px-2 py-0.5 rounded">{data.profile.staffId}</span>
           </p>
         </div>
-        <div className="absolute right-0 top-0 h-64 w-64 bg-white opacity-10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none"></div>
-        <div className="absolute left-0 bottom-0 h-32 w-32 bg-indigo-400 opacity-20 rounded-full -ml-10 -mb-10 blur-xl pointer-events-none"></div>
+        <div className="absolute right-0 top-0 h-40 w-40 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl pointer-events-none" />
       </div>
 
-      {/* Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard 
-          icon={BookOpen} 
-          label="Assigned Classes" 
-          value={data.stats.totalClasses} 
-          color="bg-blue-50 text-blue-600 border-blue-100"
-        />
-        <StatCard 
-          icon={Users} 
-          label="Total Students" 
-          value={data.stats.totalStudents} 
-          color="bg-emerald-50 text-emerald-600 border-emerald-100"
-        />
-        <StatCard 
-          icon={Calendar} 
-          label="Upcoming Events" 
-          value={data.events.length} 
-          color="bg-purple-50 text-purple-600 border-purple-100"
-        />
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard icon={BookOpen} label="Assigned classes" value={data.stats.totalClasses} />
+        <StatCard icon={Users} label="Total students" value={data.stats.totalStudents} />
+        <StatCard icon={Calendar} label="Upcoming events" value={data.events.length} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Classes */}
-        <div className="lg:col-span-2 space-y-5">
-          <div className="flex justify-between items-end border-b border-gray-100 pb-3">
-            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-gray-400" />
-              My Classes
+        {/* My Classes */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-emerald-600" />
+              My classes
             </h2>
-            <Link href="/dashboard/teacher/classes" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 group">
-              View All <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard/teachers/timetable"
+                className="text-sm text-slate-600 hover:text-emerald-700 font-medium flex items-center gap-1.5"
+              >
+                <CalendarDays className="w-4 h-4" /> Schedule
+              </Link>
+              <Link href="/dashboard/teachers/classes" className="text-sm text-emerald-700 hover:text-emerald-800 font-medium flex items-center gap-1 group">
+                View all <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {data.classes.slice(0, 4).map((cls) => (
-              <div key={cls.id} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 group">
+              <div
+                key={cls.id}
+                className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-100 transition-all group"
+              >
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">{cls.name}</h3>
-                    <div className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 bg-gray-100 rounded-md text-xs font-semibold text-gray-600">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                    <h3 className="text-lg font-bold text-slate-800 group-hover:text-emerald-800 transition-colors">{cls.name}</h3>
+                    <span className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 bg-slate-100 rounded-lg text-xs font-medium text-slate-600">
                       {cls.subject}
-                    </div>
+                    </span>
                   </div>
-                  <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-lg">
+                  <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700">
                     <Users className="w-5 h-5" />
                   </div>
                 </div>
-                
-                <div className="flex gap-3 mt-6">
-                   <Link 
-                     href={`/dashboard/teacher/attendance/${cls.id}?courseId=${cls.courseId}`}
-                     className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold py-2.5 bg-gray-50 hover:bg-white hover:border-gray-300 border border-transparent rounded-lg text-gray-700 transition-all shadow-sm"
-                   >
-                     <CheckCircle2 className="w-4 h-4" /> Attendance
-                   </Link>
-                   
-                   <Link 
-                     href={`/dashboard/teacher/results/${cls.id}?courseId=${cls.courseId}`}
-                     className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all shadow-sm shadow-indigo-200"
-                   >
-                     <FileText className="w-4 h-4" /> Results
-                   </Link>
+                <p className="text-xs text-slate-500 mb-4">{cls.students} students</p>
+                <div className="flex gap-2">
+                  <Link
+                    href={`/dashboard/teachers/attendance/${cls.id}?courseId=${cls.courseId}`}
+                    className="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-lg text-slate-700 transition-colors"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Attendance
+                  </Link>
+                  <Link
+                    href={`/dashboard/teachers/results/${cls.id}?courseId=${cls.courseId}`}
+                    className="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg transition-colors"
+                  >
+                    <FileText className="w-4 h-4" /> Results
+                  </Link>
                 </div>
               </div>
             ))}
-            
-            {data.classes.length === 0 && (
-               <div className="col-span-2 py-12 flex flex-col items-center justify-center text-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl">
-                 <div className="bg-white p-3 rounded-full shadow-sm mb-3">
-                    <BookOpen className="w-6 h-6 text-gray-400" />
-                 </div>
-                 <h3 className="font-semibold text-gray-900">No classes assigned</h3>
-                 {/* Escaped single quote */}
-                 <p className="text-sm text-gray-500 mt-1 max-w-xs">You haven&apos;t been assigned to any subjects yet. Contact the administrator.</p>
-               </div>
-            )}
           </div>
+
+          {data.classes.length === 0 && (
+            <div className="py-12 flex flex-col items-center justify-center text-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
+              <BookOpen className="w-12 h-12 text-slate-300 mb-3" />
+              <h3 className="font-semibold text-slate-800">No classes assigned</h3>
+              <p className="text-sm text-slate-500 mt-1 max-w-xs">Contact the administrator to get assigned to subjects.</p>
+            </div>
+          )}
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar: Events */}
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-full">
-            <h3 className="font-bold text-gray-800 mb-5 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-indigo-500" /> Upcoming Events
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-emerald-600" /> Upcoming events
             </h3>
-            
-            <div className="space-y-5">
-              {data.events.length > 0 ? data.events.map((event) => (
-                <div key={event.id} className="flex gap-4 items-start group">
-                  {/* Replaced min-w-[3.5rem] with min-w-14 */}
-                  <div className="bg-orange-50 text-orange-600 px-3 py-2 rounded-lg text-center min-w-14 border border-orange-100 group-hover:bg-orange-100 transition-colors">
-                    <span className="block text-xs font-bold uppercase tracking-wider">{format(new Date(event.startTime), 'MMM')}</span>
-                    <span className="block text-xl font-bold leading-none mt-0.5">{format(new Date(event.startTime), 'dd')}</span>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 line-clamp-1 group-hover:text-indigo-600 transition-colors">{event.title}</h4>
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">
-                      {event.description || "No additional details."}
-                    </p>
-                  </div>
-                </div>
-              )) : (
-                <div className="text-center py-6">
-                   <p className="text-sm text-gray-400 italic">No upcoming events.</p>
-                </div>
-              )}
-            </div>
-            
+            {data.events.length > 0 ? (
+              <ul className="space-y-4">
+                {data.events.map((event) => (
+                  <li key={event.id} className="flex gap-3 items-start">
+                    <div className="shrink-0 w-12 py-2 rounded-xl bg-amber-50 text-amber-700 text-center border border-amber-100">
+                      <span className="block text-[10px] font-bold uppercase">{format(new Date(event.startTime), 'MMM')}</span>
+                      <span className="block text-lg font-bold leading-none mt-0.5">{format(new Date(event.startTime), 'd')}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{event.title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{event.description || 'No details'}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-slate-400 italic py-4">No upcoming events.</p>
+            )}
             {data.events.length > 0 && (
-              <div className="mt-6 pt-4 border-t border-gray-100">
-                <Link href="/dashboard/events" className="text-xs font-semibold text-center block text-gray-500 hover:text-indigo-600 transition-colors">
-                  View Full Calendar
-                </Link>
-              </div>
+              <Link href="/dashboard/events" className="mt-4 pt-4 border-t border-slate-100 text-xs font-medium text-emerald-700 hover:underline block text-center">
+                View full calendar
+              </Link>
             )}
           </div>
         </div>
@@ -219,23 +202,23 @@ export default function TeacherDashboard() {
   );
 }
 
-// 3. Typed Helper Component
-interface StatCardProps {
-  icon: LucideIcon;
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
   label: string;
   value: number | string;
-  color: string;
-}
-
-function StatCard({ icon: Icon, label, value, color }: StatCardProps) {
+}) {
   return (
-    <div className={`bg-white p-5 rounded-xl border shadow-sm flex items-center gap-5 ${color.replace('bg-', 'border-').split(' ')[2] || 'border-gray-100'}`}>
-      <div className={`p-3.5 rounded-xl ${color}`}>
+    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+      <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700">
         <Icon className="w-7 h-7" />
       </div>
       <div>
-        <p className="text-sm text-gray-500 font-medium mb-0.5">{label}</p>
-        <p className="text-3xl font-bold text-gray-900 tracking-tight">{value}</p>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</p>
+        <p className="text-2xl font-bold text-slate-900">{value}</p>
       </div>
     </div>
   );
