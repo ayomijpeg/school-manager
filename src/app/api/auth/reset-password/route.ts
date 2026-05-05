@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { jwtVerify } from 'jose';
 import { checkRateLimit } from '@/lib/rateLimit';
 

@@ -1,7 +1,11 @@
+
 'use client';
 
-import React, { useState } from 'react';
+export const dynamic = 'force-dynamic';
+
 import { useDataFetch } from '@/hooks/useDataFetch';
+import React, { useState } from 'react';
+
 import Button from '@/components/ui/Button';
 // Removed unused Spinner import
 import Modal from '@/components/ui/Modal'; 

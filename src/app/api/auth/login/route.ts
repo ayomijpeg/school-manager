@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import { checkRateLimit } from '@/lib/rateLimit';
@@ -38,7 +38,8 @@ export async function POST(request: Request) {
 
     // 2. Compare Password (THE FIX IS HERE)
     // We switched 'user.password' to 'user.passwordHash' to match your database
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+   const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
     
     if (!isPasswordValid) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
 

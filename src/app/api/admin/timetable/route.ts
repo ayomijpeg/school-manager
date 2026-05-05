@@ -43,9 +43,10 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json(slots);
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to load timetable" }, { status: 500 });
-  }
+ } catch (error) {
+  console.error("Timetable API Error:", error); // Using the variable fixes the error
+  return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+}
 }
 
 // ✅ POST Method (With Increased Timeout)

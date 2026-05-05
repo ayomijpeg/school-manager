@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useDataFetch } from '@/hooks/useDataFetch';
@@ -10,7 +12,7 @@ import { toast } from 'sonner';
 import { DEPARTMENTS } from '@/lib/constant';
 
 // Icons
-import { Plus, School, Edit, Trash2, AlertTriangle, CheckCircle2, BookOpen } from 'lucide-react';
+import { Plus, School, Edit, Trash2, AlertTriangle } from 'lucide-react';
 
 // UI Components
 import Button from '@/components/ui/Button';
@@ -18,107 +20,84 @@ import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Spinner from '@/components/ui/Spinner';
-import EmptyState from '@/components/ui/EmptyState';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+import EmptyState from '@/components/ui/EmptyState';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 
-// 🟢 CRITICAL: Prevents build errors by skipping static generation for this page
-export const dynamic = 'force-dynamic';
-
-interface ClassWithLevel extends Class {
+// Update Interface to match your actual DB structure (where department is an object)
+interface LocalClassWithLevel extends Class {
   level: { name: string };
+  department?: { name: string; id: string } | null; 
+  roomNumber: string | null;
 }
 
 interface ClassFormData {
   name: string;
   levelId: string;
   roomNumber: string;
-  department: string;
+  departmentId: string; // Changed to Id to match DB relations
 }
 
 export default function ManageClassesPage() {
-  // --- State ---
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [currentClass, setCurrentClass] = useState<ClassWithLevel | null>(null);
-  
+  const [currentClass, setCurrentClass] = useState<LocalClassWithLevel | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<ClassFormData>({ 
-    name: '', levelId: '', roomNumber: '', department: '' 
+    name: '', levelId: '', roomNumber: '', departmentId: '' 
   });
 
-  // --- Fetch Data ---
-  const { 
-    data: classes, 
-    isLoading: isLoadingClasses, 
-    error: errorClasses, 
-    refetch: refetchClasses 
-  } = useDataFetch<ClassWithLevel[]>(classApi.getAll);
+  const { data: classes, isLoading: isLoadingClasses, error: errorClasses, refetch: refetchClasses } = 
+    useDataFetch<LocalClassWithLevel[]>(classApi.getAll as any);
   
-  const { 
-    data: levels, 
-    isLoading: isLoadingLevels 
-  } = useDataFetch<Level[]>(levelApi.getAll);
+  const { data: levels, isLoading: isLoadingLevels } = useDataFetch<Level[]>(levelApi.getAll);
 
-  // --- Handlers ---
   const openAddModal = () => {
     setModalMode('add');
     setCurrentClass(null);
-    setFormData({ name: '', levelId: '', roomNumber: '', department: '' });
+    setFormData({ name: '', levelId: '', roomNumber: '', departmentId: '' });
     setIsFormModalOpen(true);
   };
 
-  const openEditModal = (cls: ClassWithLevel) => {
+  const openEditModal = (cls: LocalClassWithLevel) => {
     setModalMode('edit');
     setCurrentClass(cls);
     setFormData({
       name: cls.name,
       levelId: cls.levelId,
       roomNumber: cls.roomNumber || '',
-      department: cls.department || '',
+      departmentId: (cls as any).departmentId || '',
     });
     setIsFormModalOpen(true);
   };
 
-  const closeFormModal = () => setIsFormModalOpen(false);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.levelId) {
-      toast.error('Class Name and Level are required.');
-      return;
-    }
-
     setIsSubmitting(true);
 
-    // Convert empty strings to null for the API
     const payload = {
       name: formData.name,
       levelId: formData.levelId,
       roomNumber: formData.roomNumber || null,
-      department: (formData.department as Department) || null,
+      departmentId: formData.departmentId || null,
     };
 
     try {
       if (modalMode === 'add') {
         await classApi.create(payload);
-        toast.success(`Class "${payload.name}" created!`);
+        toast.success("Class created!");
       } else {
         await classApi.update(currentClass!.id, payload);
-        toast.success(`Class updated successfully`);
+        toast.success("Class updated!");
       }
-      closeFormModal();
+      setIsFormModalOpen(false);
       await refetchClasses();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Operation failed");
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Action failed";
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -132,176 +111,86 @@ export default function ManageClassesPage() {
       toast.success("Class deleted");
       setIsDeleteModalOpen(false);
       await refetchClasses();
-    } catch (err: any) {
-      toast.error("Cannot delete class. Check if students are enrolled.");
+    } catch {
+      toast.error("Cannot delete class. Ensure it has no students.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // --- Loading / Error ---
-  if (isLoadingClasses || isLoadingLevels) return (
-    <div className="flex h-[60vh] items-center justify-center">
-       <Spinner size="lg" text="Loading Data..." />
-    </div>
-  );
+  if (isLoadingClasses || isLoadingLevels) return <div className="flex h-[60vh] items-center justify-center"><Spinner size="lg" /></div>;
 
-  if (errorClasses) return <Card><p className="text-red-600">Error: {errorClasses.message}</p></Card>;
-
-  // --- Options ---
   const levelOptions = levels?.map(l => ({ value: l.id, label: l.name })) || [];
-  const departmentOptions = DEPARTMENTS.map(d => ({ value: d.value, label: d.label }));
+  
+  // FIXED: Explicit typing for department options
+  const departmentOptions: {value: string, label: string}[] = DEPARTMENTS.map((d: any) => ({
+    value: typeof d === 'string' ? d : d.id || d.value,
+    label: typeof d === 'string' ? d : d.name || d.label
+  }));
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      className="space-y-6"
-    >
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 font-heading">Manage Classes</h1>
-          <p className="text-gray-500 mt-1">Organize students into classes and streams (Science, Arts).</p>
-        </div>
-        <Button 
-          variant="primary" 
-          icon={Plus} 
-          onClick={openAddModal} 
-          disabled={!levels || levels.length === 0}
-        >
-          Create Class
-        </Button>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Manage Classes</h1>
+        <Button variant="primary" icon={Plus} onClick={openAddModal}>Create Class</Button>
       </div>
 
-      {/* Content */}
       {classes && classes.length > 0 ? (
-        <Card className="overflow-hidden border-gray-200 shadow-sm">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-gray-50/50">
-                <TableRow>
-                  <TableHead>Class Name</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Room</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+        <Card className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Class Name</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Room</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {classes.map((cls) => (
+                <TableRow key={cls.id}>
+                  <TableCell className="font-medium">{cls.level.name} / {cls.name}</TableCell>
+                  <TableCell>
+                    {cls.department ? (
+                      <Badge variant="info">{cls.department.name}</Badge>
+                    ) : <span className="text-gray-400 italic">General</span>}
+                  </TableCell>
+                  <TableCell>{cls.roomNumber || '-'}</TableCell>
+                  <TableCell className="text-right flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" icon={Edit} onClick={() => openEditModal(cls)} />
+                    <Button variant="ghost" size="sm" icon={Trash2} className="text-red-600" onClick={() => { setCurrentClass(cls); setIsDeleteModalOpen(true); }} />
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                <AnimatePresence>
-                  {classes.map((cls, idx) => (
-                    <motion.tr
-                      key={cls.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ delay: idx * 0.03 }}
-                      className="group border-b border-gray-100 hover:bg-gray-50/80 transition-colors"
-                    >
-                      {/* 🟢 Improved: Shows "JSS 1 A" instead of just "A" */}
-                      <TableCell className="font-medium text-gray-900">
-                         {cls.level.name} <span className="text-gray-400 mx-1">/</span> {cls.name}
-                      </TableCell>
-                      
-                      <TableCell>
-                          {cls.department ? (
-                            <Badge variant={cls.department === 'SCIENCE' ? 'info' : cls.department === 'ARTS' ? 'warning' : 'default'}>
-                              {cls.department}
-                            </Badge>
-                          ) : <span className="text-gray-400 italic text-sm">General</span>}
-                      </TableCell>
-                      
-                      <TableCell className="text-gray-500 text-sm">{cls.roomNumber || '-'}</TableCell>
-                      
-                      <TableCell className="text-right">
-                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <Button variant="ghost" size="sm" icon={Edit} onClick={() => openEditModal(cls)} />
-                             <Button variant="ghost" size="sm" icon={Trash2} className="text-red-600 hover:bg-red-50" onClick={() => { setCurrentClass(cls); setIsDeleteModalOpen(true); }} />
-                          </div>
-                      </TableCell>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
-              </TableBody>
-            </Table>
-          </div>
+              ))}
+            </TableBody>
+          </Table>
         </Card>
       ) : (
-        <EmptyState
-          icon={School}
-          title="No Classes Found"
-          description="Create your first class to start enrolling students."
-          action={{ label: "Create Class", onClick: openAddModal, icon: Plus, disabled: !levels?.length }}
-        />
+        <EmptyState icon={School} title="No Classes" description="Add your first class to get started." />
       )}
 
-      {/* Warning if no levels */}
-      {(!levels || levels.length === 0) && !isLoadingLevels && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3 text-amber-800">
-          <AlertTriangle className="h-5 w-5" />
-          <p>You need to <Link href="/dashboard/admin/levels" className="underline font-semibold">create Levels</Link> (e.g. JSS 1) before adding classes.</p>
-        </div>
-      )}
-
-      {/* --- Modals --- */}
-      
-      <Modal isOpen={isFormModalOpen} onClose={closeFormModal} title={modalMode === 'add' ? "New Class" : "Edit Class"}>
+      {/* Form Modal */}
+      <Modal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} title={modalMode === 'add' ? "New Class" : "Edit Class"}>
         <form onSubmit={handleFormSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input 
-                label="Class Arm (e.g. A, B, Gold)" 
-                name="name" 
-                value={formData.name} 
-                onChange={handleChange} 
-                required 
-                placeholder="A" 
-                autoComplete="off" 
-            />
-            <Select 
-              label="Level" 
-              name="levelId" 
-              value={formData.levelId} 
-              onChange={handleChange} 
-              required 
-              options={[{ value: '', label: 'Select Level' }, ...levelOptions]} 
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Select 
-              label="Department (Optional)" 
-              name="department" 
-              value={formData.department} 
-              onChange={handleChange} 
-              options={[{ value: '', label: 'None' }, ...departmentOptions]} 
-            />
-            <Input 
-                label="Room No. (Optional)" 
-                name="roomNumber" 
-                value={formData.roomNumber} 
-                onChange={handleChange} 
-                placeholder="101" 
-                autoComplete="off" 
-            />
-          </div>
-          
-          <div className="flex justify-end gap-3 pt-4 mt-4 border-t">
-            <Button type="button" variant="secondary" onClick={closeFormModal}>Cancel</Button>
-            <Button type="submit" variant="primary" isLoading={isSubmitting}>Save Class</Button>
+          <Input label="Class Arm" name="name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
+          <Select label="Level" name="levelId" value={formData.levelId} onChange={e => setFormData({...formData, levelId: e.target.value})} options={[{value: '', label: 'Select Level'}, ...levelOptions]} required />
+          <Select label="Department" name="departmentId" value={formData.departmentId} onChange={e => setFormData({...formData, departmentId: e.target.value})} options={[{value: '', label: 'None'}, ...departmentOptions]} />
+          <Input label="Room No." name="roomNumber" value={formData.roomNumber} onChange={e => setFormData({...formData, roomNumber: e.target.value})} />
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="primary" type="submit" isLoading={isSubmitting}>Save</Button>
           </div>
         </form>
       </Modal>
 
-      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Delete Class">
-         <div className="text-center space-y-4">
-            <div className="mx-auto bg-red-100 h-12 w-12 rounded-full flex items-center justify-center text-red-600"><AlertTriangle /></div>
-            <p>Are you sure you want to delete <strong>{currentClass?.level.name} {currentClass?.name}</strong>? This cannot be undone.</p>
-            <div className="flex justify-center gap-3">
-               <Button variant="secondary" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
+      {/* Delete Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirm Delete">
+         <div className="text-center p-4">
+            <p>Delete <strong>{currentClass?.name}</strong>? This cannot be undone.</p>
+            <div className="flex justify-center gap-3 mt-6">
                <Button variant="danger" onClick={handleDelete} isLoading={isSubmitting}>Delete</Button>
             </div>
          </div>
       </Modal>
-
     </motion.div>
   );
 }
