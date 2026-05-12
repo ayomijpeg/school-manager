@@ -192,7 +192,7 @@ function ActionCard({ label, href, icon: Icon }: { label: string; href: string; 
   return (
     <Link
       href={href}
-      className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-200 dark:hover:border-emerald-800 hover:shadow-md transition-all group text-center min-h-[100px]"
+      className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-200 dark:hover:border-emerald-800 hover:shadow-md transition-all group text-center min-h-25]"
     >
       <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/20 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
         <Icon className="w-5 h-5" />

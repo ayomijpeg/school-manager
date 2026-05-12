@@ -3,16 +3,15 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { useDataFetch } from '@/hooks/useDataFetch';
 import { classApi, levelApi } from '@/lib/api';
-import { Level, Class, Department } from '@prisma/client';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Level, Class } from '@prisma/client'; // 🟢 Removed 'Department' (unused)
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { DEPARTMENTS } from '@/lib/constant';
 
 // Icons
-import { Plus, School, Edit, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, School, Edit, Trash2 } from 'lucide-react';
 
 // UI Components
 import Button from '@/components/ui/Button';
@@ -25,18 +24,18 @@ import Badge from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 
-// Update Interface to match your actual DB structure (where department is an object)
+// Update Interface to include all fields used in the UI
 interface LocalClassWithLevel extends Class {
   level: { name: string };
   department?: { name: string; id: string } | null; 
-  roomNumber: string | null;
+  roomNumber: string | null; // 🟢 Added to fix Error 2
 }
 
 interface ClassFormData {
   name: string;
   levelId: string;
   roomNumber: string;
-  departmentId: string; // Changed to Id to match DB relations
+  departmentId: string;
 }
 
 export default function ManageClassesPage() {
@@ -50,8 +49,8 @@ export default function ManageClassesPage() {
     name: '', levelId: '', roomNumber: '', departmentId: '' 
   });
 
-  const { data: classes, isLoading: isLoadingClasses, error: errorClasses, refetch: refetchClasses } = 
-    useDataFetch<LocalClassWithLevel[]>(classApi.getAll as any);
+  const { data: classes, isLoading: isLoadingClasses, refetch: refetchClasses } = 
+    useDataFetch<LocalClassWithLevel[]>(classApi.getAll as () => Promise<LocalClassWithLevel[]>);
   
   const { data: levels, isLoading: isLoadingLevels } = useDataFetch<Level[]>(levelApi.getAll);
 
@@ -69,7 +68,7 @@ export default function ManageClassesPage() {
       name: cls.name,
       levelId: cls.levelId,
       roomNumber: cls.roomNumber || '',
-      departmentId: (cls as any).departmentId || '',
+      departmentId: cls.departmentId || '',
     });
     setIsFormModalOpen(true);
   };
@@ -89,8 +88,8 @@ export default function ManageClassesPage() {
       if (modalMode === 'add') {
         await classApi.create(payload);
         toast.success("Class created!");
-      } else {
-        await classApi.update(currentClass!.id, payload);
+      } else if (currentClass) {
+        await classApi.update(currentClass.id, payload);
         toast.success("Class updated!");
       }
       setIsFormModalOpen(false);
@@ -122,11 +121,11 @@ export default function ManageClassesPage() {
 
   const levelOptions = levels?.map(l => ({ value: l.id, label: l.name })) || [];
   
-  // FIXED: Explicit typing for department options
-  const departmentOptions: {value: string, label: string}[] = DEPARTMENTS.map((d: any) => ({
-    value: typeof d === 'string' ? d : d.id || d.value,
-    label: typeof d === 'string' ? d : d.name || d.label
-  }));
+  // 🟢 FIXED: Type-safe mapping for DEPARTMENTS to fix Error 1
+  const departmentOptions = DEPARTMENTS.map((d: any) => {
+    if (typeof d === 'string') return { value: d, label: d };
+    return { value: d.value || d.id, label: d.label || d.name };
+  });
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">

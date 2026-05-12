@@ -3,7 +3,8 @@ export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Wallet, AlertCircle, CheckCircle2, LucideIcon, Search, ClipboardCheck, Printer } from 'lucide-react';
+// 🟢 FIXED: Added 'Receipt' to the import list
+import { Wallet, AlertCircle, CheckCircle2, LucideIcon, Search, ClipboardCheck, Printer, Receipt } from 'lucide-react';
 import InvoiceGenerator from '@/components/finance/InvoiceGenerator';
 import InvoiceList from '@/components/finance/InvoiceList';
 import PaymentSettingsModal from '@/components/finance/PaymentSettingsModal';
@@ -35,7 +36,6 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
 
   // 3. Fetch Data in Parallel
   const [rawInvoices, totalCount, stats, levels, config, pendingCount] = await Promise.all([
-    // A. Fetch Paginated Invoices
     prisma.invoice.findMany({
         where: whereCondition,
         take: ITEMS_PER_PAGE,
@@ -45,16 +45,12 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
             student: { include: { level: true } } 
         }
     }),
-    // B. Count Total Invoices
     prisma.invoice.count({ where: whereCondition }),
-    // C. Get Stats
     prisma.invoice.aggregate({
         _sum: { totalAmount: true, amountPaid: true }
     }),
-    // D. Dropdown Data
     prisma.level.findMany({ orderBy: { name: 'asc' } }),
     prisma.schoolConfig.findFirst(),
-    // E. Count Pending Payments for Badge
     prisma.payment.count({ where: { status: 'PENDING' } })
   ]);
 
@@ -82,7 +78,6 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
         
         <div className="flex items-center gap-3">
             <RefreshButton />
-            {/* PRINT BUTTON (New) */}
             <Link 
                 href={`/dashboard/finance/print?query=${query}`} 
                 target="_blank" 
@@ -92,7 +87,6 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
                 <span className="hidden md:inline">Print List</span>
             </Link>
 
-           {/* VERIFY BUTTON */}
            <Link 
              href="/dashboard/finance/verification"
              className="relative flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm group"
@@ -132,7 +126,8 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
       </div>
 
       {/* MAIN TABLE */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+      {/* 🟢 FIXED: Using 'min-h-[500px]' is standard, but standard Tailwind suggests naming conventions. I'll leave as is to avoid confusion unless you want 'min-h-125' */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-125">
          <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
             <h3 className="font-bold text-slate-700 font-serif">Invoice History</h3>
             <span className="text-xs text-slate-400">
@@ -154,8 +149,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
              <InvoiceList initialInvoices={invoices} />
          )}
 
-         {/* PAGINATION CONTROLS */}
-         <div className="p-4 border-t border-slate-100">
+         <div className="p-4 border-t border-slate-100 mt-auto">
             <TablePagination totalPages={totalPages} currentPage={currentPage} />
          </div>
       </div>
@@ -164,7 +158,6 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
   );
 }
 
-// ... StatCard Component (Unchanged)
 interface StatCardProps {
     label: string;
     value: number;

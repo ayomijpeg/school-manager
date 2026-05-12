@@ -47,7 +47,7 @@ function ResetPasswordForm() {
       setTimeout(() => {
         window.location.href = '/auth/login';
       }, 1500);
-    } catch (err) {
+    } catch  {
       toast.error('Request failed. Please try again.');
       setLoading(false);
     }
@@ -55,7 +55,7 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="w-full max-w-[400px] text-center">
+      <div className="w-full max-w-100 text-center">
         <p className="text-slate-600 mb-4">This reset link is invalid or has expired.</p>
         <Link href="/auth/forgot-password" className="text-emerald-700 font-medium hover:underline">
           Request a new link
@@ -70,7 +70,7 @@ function ResetPasswordForm() {
 
   if (success) {
     return (
-      <div className="w-full max-w-[400px] text-center space-y-4">
+      <div className="w-full max-w-100 text-center space-y-4">
         <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600">
           <CheckCircle2 className="w-8 h-8" />
         </div>
@@ -81,7 +81,7 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="w-full max-w-[400px]">
+    <div className="w-full max-w-100 mx-auto">
       <Link href="/auth/login" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-emerald-700 mb-8">
         <ArrowLeft className="w-4 h-4" /> Back to sign in
       </Link>

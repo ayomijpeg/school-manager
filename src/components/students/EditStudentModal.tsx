@@ -9,7 +9,7 @@ export default function EditStudentModal({
  studentId, 
   isOpen, 
   onClose,
-  initialMode = 'edit' // <--- Add this prop
+  initialMode = 'edit' 
 }: { 
   studentId: string; 
   isOpen: boolean; 
@@ -21,13 +21,14 @@ export default function EditStudentModal({
 
  useEffect(() => {
     if (isOpen) {
-      // ✅ Fix: Move logic into an async function
       const fetchData = async () => {
         setLoading(true);
         try {
-          const [student, levels, departments, configData] = await Promise.all([
+          // 🟢 ADDED: Fetching /api/classes so the dropdown has data
+          const [student, levels, classes, departments, configData] = await Promise.all([
             fetch(`/api/students/${studentId}`).then(r => r.json()),
             fetch('/api/levels').then(r => r.json()),
+            fetch('/api/classes').then(r => r.json()), // <--- Fetch classes here
             fetch('/api/departments').then(r => r.json()),
             fetch('/api/setup/school').then(r => r.json())
           ]);
@@ -35,12 +36,13 @@ export default function EditStudentModal({
           setData({ 
             student, 
             levels, 
+            classes, // <--- Pass this to state
             departments, 
             isTertiary: configData?.config?.schoolType === 'TERTIARY' 
           });
         } catch (err) {
           console.error(err);
-          onClose(); // Close if error
+          onClose(); 
         } finally {
           setLoading(false);
         }
@@ -64,13 +66,14 @@ export default function EditStudentModal({
         </div>
       ) : (
         <EditStudentForm 
-          student={data.student}
+          student={studentId === data.student.id ? data.student : {}} // Ensure data matches ID
           email={data.student.user?.email}
           levels={data.levels}
+          classes={data.classes} // 🟢 Pass classes to the form
           departments={data.departments}
           isTertiary={data.isTertiary}
-           mode={initialMode} 
-          onSuccess={onClose} // <--- Important: Closes modal on save
+          mode={initialMode} 
+          onSuccess={onClose} 
         />
       )}
     </Modal>

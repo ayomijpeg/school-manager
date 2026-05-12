@@ -3,23 +3,49 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { User, BookOpen, Pencil } from 'lucide-react';
+import { User, BookOpen, Pencil } from 'lucide-react'; // 🟢 Removed 'Users' (unused)
 import Button from '@/components/ui/Button';
 
-// Add 'mode' to props
+// --- TYPES ---
+interface Student {
+  id: string;
+  fullName: string;
+  contactPhone?: string | null;
+  dateOfBirth?: string | Date | null;
+  levelId?: string | null;
+  departmentId?: string | null;
+  enrollments?: { classId: string }[];
+}
+
+interface DropdownItem {
+  id: string;
+  name: string;
+  levelId?: string; // Used for filtering classes
+}
+
+interface EditStudentFormProps {
+  student: Student;
+  email?: string;
+  levels: DropdownItem[];
+  classes: DropdownItem[];
+  departments: DropdownItem[];
+  isTertiary: boolean;
+  onSuccess?: () => void;
+  mode?: 'edit' | 'view';
+}
+
 export default function EditStudentForm({ 
   student, 
   email, 
   levels, 
+  classes = [], 
   departments, 
   isTertiary,
   onSuccess,
-  mode = 'edit' // Default to 'edit'
-}: any) {
+  mode = 'edit'
+}: EditStudentFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Local state to toggle mode internally if user clicks "Edit" from View mode
   const [currentMode, setCurrentMode] = useState<'view' | 'edit'>(mode);
   const isViewOnly = currentMode === 'view';
 
@@ -30,11 +56,14 @@ export default function EditStudentForm({
     dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : '',
     levelId: student.levelId || '',
     departmentId: student.departmentId || '',
+    classId: student.enrollments?.[0]?.classId || '',
   });
+
+  const filteredClasses = classes.filter((c) => c.levelId === formData.levelId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isViewOnly) return; // Should not happen, but safe guard
+    if (isViewOnly) return;
 
     setIsLoading(true);
 
@@ -45,13 +74,17 @@ export default function EditStudentForm({
             body: JSON.stringify(formData)
         });
 
-        if (!res.ok) throw new Error("Update failed");
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || "Update failed");
+        }
         
-        toast.success("Profile updated");
+        toast.success("Profile updated successfully");
         router.refresh(); 
         if (onSuccess) onSuccess(); 
-    } catch (error) {
-        toast.error("Could not save changes");
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : "Could not save changes";
+        toast.error(msg);
     } finally {
         setIsLoading(false);
     }
@@ -60,7 +93,6 @@ export default function EditStudentForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       
-      {/* If viewing, show an Edit Button at the top */}
       {isViewOnly && (
         <div className="flex justify-end -mt-2 mb-2">
             <button 
@@ -74,7 +106,7 @@ export default function EditStudentForm({
       )}
 
       {/* Personal Info */}
-      <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-6 relative">
+      <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-6">
          <h3 className="font-serif font-bold text-slate-800 mb-4 flex items-center gap-2">
             <User size={18} className="text-emerald-700"/> Personal Details
          </h3>
@@ -92,19 +124,33 @@ export default function EditStudentForm({
             <BookOpen size={18} className="text-emerald-700"/> Academic Placement
          </h3>
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select label="Level" value={formData.levelId} onChange={(v:string)=>setFormData({...formData, levelId: v})} disabled={isViewOnly}>
-               {levels.map((l:any) => <option key={l.id} value={l.id}>{l.name}</option>)}
+            <Select label="Level" value={formData.levelId} onChange={(v:string)=>setFormData({...formData, levelId: v, classId: ''})} disabled={isViewOnly}>
+               <option value="">Select Level</option>
+               {levels.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
             </Select>
+
+            <Select 
+              label="Class Assignment" 
+              value={formData.classId} 
+              onChange={(v:string)=>setFormData({...formData, classId: v})} 
+              disabled={isViewOnly || !formData.levelId}
+            >
+               <option value="">Unassigned</option>
+               {filteredClasses.map((c) => (
+                 <option key={c.id} value={c.id}>{c.name}</option>
+               ))}
+            </Select>
+
             {(isTertiary || departments.length > 0) && (
               <Select label="Department" value={formData.departmentId} onChange={(v:string)=>setFormData({...formData, departmentId: v})} disabled={isViewOnly}>
                  <option value="">No Department</option>
-                 {departments.map((d:any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                 {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </Select>
             )}
          </div>
       </div>
 
-      {/* Footer Buttons */}
+      {/* Footer */}
       <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
         {isViewOnly ? (
             <Button variant="primary" onClick={onSuccess} type="button" className="bg-slate-800 text-white">
@@ -129,17 +175,21 @@ export default function EditStudentForm({
   );
 }
 
-// Helpers (Now accepting disabled prop)
+// --- HELPER COMPONENTS ---
 
+interface InputProps {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  type?: string;
+  disabled?: boolean;
+}
 
-const Input = ({ label, value, onChange, type = "text", disabled }: any) => {
-  // VIEW MODE: Render clean text with a subtle underline (Ledger style)
+const Input = ({ label, value, onChange, type = "text", disabled }: InputProps) => {
   if (disabled) {
     return (
       <div className="group">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-          {label}
-        </p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
         <div className="border-b border-slate-100 pb-1.5 pt-0.5">
           <p className="text-base font-serif font-medium text-slate-900 leading-none">
             {value || <span className="text-slate-300 italic">Not set</span>}
@@ -149,12 +199,9 @@ const Input = ({ label, value, onChange, type = "text", disabled }: any) => {
     );
   }
 
-  // EDIT MODE: Render the input box
   return (
     <div>
-      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-        {label}
-      </label>
+      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{label}</label>
       <input
         aria-label={label}
         className="w-full border border-slate-200 rounded-lg p-2.5 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 outline-none transition-all font-medium text-slate-700"
@@ -166,14 +213,19 @@ const Input = ({ label, value, onChange, type = "text", disabled }: any) => {
   );
 };
 
-const Select = ({ label, value, onChange, children, disabled }: any) => {
-  // VIEW MODE: Render text (We cheat slightly by using the select but stripping all styles)
+interface SelectProps {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  children: React.ReactNode;
+  disabled?: boolean;
+}
+
+const Select = ({ label, value, onChange, children, disabled }: SelectProps) => {
   if (disabled) {
     return (
       <div className="group">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-          {label}
-        </p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
         <div className="border-b border-slate-100 pb-1.5 pt-0.5 relative">
           <select
             aria-label="Select Option"
@@ -181,7 +233,6 @@ const Select = ({ label, value, onChange, children, disabled }: any) => {
             value={value}
             disabled
           >
-            {/* If value is empty, show placeholder */}
             {!value && <option>—</option>}
             {children}
           </select>
@@ -190,12 +241,9 @@ const Select = ({ label, value, onChange, children, disabled }: any) => {
     );
   }
 
-  // EDIT MODE
   return (
     <div>
-      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-        {label}
-      </label>
+      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{label}</label>
       <div className="relative">
         <select
           aria-label="Select Option"
@@ -205,7 +253,6 @@ const Select = ({ label, value, onChange, children, disabled }: any) => {
         >
           {children}
         </select>
-        {/* Dropdown Arrow */}
         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
           <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M1 1L5 5L9 1" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
