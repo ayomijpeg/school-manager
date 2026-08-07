@@ -232,7 +232,6 @@ export default function Home() {
                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
                     </div>
                     <div className="h-32 bg-amber-50 rounded-2xl flex flex-col items-center justify-center text-amber-600 p-6 text-center border border-amber-100">
-                       <div className="text-4xl font-serif font-bold mb-1">5+</div>
                        <div className="text-xs uppercase tracking-wide font-semibold opacity-80">Years of Excellence</div>
                     </div>
                  </div>

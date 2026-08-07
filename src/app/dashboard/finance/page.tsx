@@ -3,8 +3,7 @@ export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-// 🟢 FIXED: Added 'Receipt' to the import list
-import { Wallet, AlertCircle, CheckCircle2, LucideIcon, Search, ClipboardCheck, Printer, Receipt } from 'lucide-react';
+import { Wallet, AlertCircle, CheckCircle2, Search, ClipboardCheck, Printer, Receipt } from 'lucide-react';
 import InvoiceGenerator from '@/components/finance/InvoiceGenerator';
 import InvoiceList from '@/components/finance/InvoiceList';
 import PaymentSettingsModal from '@/components/finance/PaymentSettingsModal';
@@ -12,6 +11,7 @@ import TablePagination from '@/components/ui/TablePagination';
 import RefreshButton from '@/components/ui/RefreshButton';
 import { formatCurrency } from '@/lib/utils';
 import { getCurrentUser } from '@/lib/session';
+import type { LucideIcon } from 'lucide-react';
 
 type SearchParams = Promise<{ page?: string; query?: string }>;
 
@@ -35,6 +35,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
   } : {};
 
   // 3. Fetch Data in Parallel
+  // FIXED: Changed pendingClaimCount to pendingCount to match JSX usage
   const [rawInvoices, totalCount, stats, levels, config, pendingCount] = await Promise.all([
     prisma.invoice.findMany({
         where: whereCondition,
@@ -47,6 +48,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
     }),
     prisma.invoice.count({ where: whereCondition }),
     prisma.invoice.aggregate({
+        where: { status: { not: 'CANCELLED' } }, // Syncs with Dashboard
         _sum: { totalAmount: true, amountPaid: true }
     }),
     prisma.level.findMany({ orderBy: { name: 'asc' } }),
@@ -64,7 +66,9 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
   const totalBilled = Number(stats._sum.totalAmount || 0);
   const totalCollected = Number(stats._sum.amountPaid || 0);
-  const totalPending = totalBilled - totalCollected;
+  
+  // FIXED: Removed the duplicate totalPending declaration line
+  const totalPending = totalBilled - totalCollected; 
 
   return (
     <div className="p-6 md:p-8 min-h-screen bg-[#FDFDFC]">
@@ -126,7 +130,6 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
       </div>
 
       {/* MAIN TABLE */}
-      {/* 🟢 FIXED: Using 'min-h-[500px]' is standard, but standard Tailwind suggests naming conventions. I'll leave as is to avoid confusion unless you want 'min-h-125' */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-125">
          <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
             <h3 className="font-bold text-slate-700 font-serif">Invoice History</h3>
@@ -137,11 +140,11 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
          
          {invoices.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-20 px-4">
-              <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400 dark:text-slate-500">
+              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
                 <Receipt className="w-8 h-8" />
               </div>
-              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">No invoices found</h3>
-              <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-2 text-center">
+              <h3 className="text-lg font-medium text-slate-900">No invoices found</h3>
+              <p className="text-slate-500 max-w-sm mx-auto mt-2 text-center">
                 {query ? `No invoices match "${query}". Try a different search.` : 'Create your first invoice using the "Create Invoice" button above.'}
               </p>
             </div>

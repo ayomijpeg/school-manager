@@ -10,7 +10,7 @@ import { DashboardClient } from './DashboardClient';
 import StudentDashboard from '@/components/dashboard/StudentDashboard';
 import ParentDashboard from '@/components/dashboard/ParentDashboard';
 import { Loader2 } from 'lucide-react';
-import type { SchoolConfig, User } from '@prisma/client';
+import type { SchoolConfig } from '@prisma/client';
 
 // 1. Define Strict Types for Server Data
 type DashboardCounts = {
@@ -22,7 +22,12 @@ type DashboardCounts = {
 } | null;
 
 type DashboardData = 
-  | { status: 'SUCCESS'; user: User; config: SchoolConfig; counts: DashboardCounts } 
+  | { 
+      status: 'SUCCESS'; 
+      user: { id: string; email: string; role: string }; // Changed from 'User' to specific fields
+      config: SchoolConfig; 
+      counts: DashboardCounts 
+    } 
   | { status: 'DB_ERROR'; error: string }
   | { status: 'UNAUTHORIZED' }
   | { status: 'SETUP_REQUIRED' };
@@ -41,26 +46,37 @@ async function getDashboardData(): Promise<DashboardData> {
     let counts: DashboardCounts = null;
     
     // Only fetch expensive stats if the user is an Admin
-    if (user.role === 'ADMIN') {
-        const [studentCount, teacherCount, classCount, invoiceAgg] = await Promise.all([
-            prisma.student.count({ where: { deletedAt: null } }),
-            prisma.teacher.count(),
-            prisma.class.count(),
-            prisma.invoice.aggregate({
-              where: { status: { in: ['PENDING', 'OVERDUE', 'PARTIALLY_PAID'] } },
-              _sum: { totalAmount: true, amountPaid: true },
-            }),
-        ]);
-        const pendingRevenue = Number(invoiceAgg._sum.totalAmount ?? 0) - Number(invoiceAgg._sum.amountPaid ?? 0);
-        const pendingCount = await prisma.invoice.count({ where: { status: { in: ['PENDING', 'OVERDUE'] } } });
-        counts = {
-          students: studentCount,
-          teachers: teacherCount,
-          classes: classCount,
-          invoices: pendingCount,
-          pendingRevenue,
-        };
-    }
+   if (user.role === 'ADMIN') {
+    const [studentCount, teacherCount, classCount, invoiceAgg] = await Promise.all([
+        prisma.student.count({ where: { deletedAt: null } }),
+        prisma.teacher.count(),
+        prisma.class.count(),
+        prisma.invoice.aggregate({
+          where: { 
+            status: { not: 'CANCELLED' } // Standardize: ignore cancelled
+          },
+          _sum: { totalAmount: true, amountPaid: true },
+        }),
+    ]);
+
+    // Calculate remaining debt
+    const pendingRevenue = Number(invoiceAgg._sum.totalAmount ?? 0) - Number(invoiceAgg._sum.amountPaid ?? 0);
+    
+    // Count invoices that still have a balance
+    const pendingCount = await prisma.invoice.count({ 
+      where: { 
+        status: { in: ['PENDING', 'OVERDUE', 'PARTIALLY_PAID'] } 
+      } 
+    });
+
+    counts = {
+      students: studentCount,
+      teachers: teacherCount,
+      classes: classCount,
+      invoices: pendingCount, 
+      pendingRevenue,
+    };
+}
 
     return {
       status: 'SUCCESS',
