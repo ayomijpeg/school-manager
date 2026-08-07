@@ -1,22 +1,28 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+// 1. Define an interface for the incoming result data
+interface ResultInput {
+  studentId: string;
+  caScore: string | number;
+  examScore: string | number;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { courseId, results } = body; // matches frontend payload
+    // Type the destructured variables
+    const { courseId, results }: { courseId: string; results: ResultInput[] } = body;
 
     if (!results || !Array.isArray(results)) {
       return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
     }
 
-    // 1. Get current settings from SchoolConfig
     const config = await prisma.schoolConfig.findFirst();
     if (!config) {
       return NextResponse.json({ error: "School configuration not found" }, { status: 400 });
     }
 
-    // 2. Find or Create an Exam record for this Term/Year
     let exam = await prisma.exam.findFirst({
       where: {
         name: config.currentTerm,
@@ -33,12 +39,15 @@ export async function POST(req: Request) {
       });
     }
 
-    // 3. Process and Save results using a Transaction
+    // Process and Save results using a Transaction
     await prisma.$transaction(
-      results.map((res: any) => {
-        const ca = parseFloat(res.caScore) || 0;
-        const examScore = parseFloat(res.examScore) || 0;
-        const total = ca + examScore;
+      results.map((res: ResultInput) => { // 🟢 Fixed: Replaced 'any' with ResultInput
+        const ca = typeof res.caScore === 'string' ? parseFloat(res.caScore) : res.caScore;
+        const ex = typeof res.examScore === 'string' ? parseFloat(res.examScore) : res.examScore;
+        
+        const caScore = ca || 0;
+        const examScore = ex || 0;
+        const total = caScore + examScore;
 
         // Grading Logic
         let grade = 'F';
@@ -57,7 +66,7 @@ export async function POST(req: Request) {
             }
           },
           update: {
-            caScore: ca,
+            caScore: caScore,
             examScore: examScore,
             totalScore: total,
             grade: grade,
@@ -66,7 +75,7 @@ export async function POST(req: Request) {
             studentId: res.studentId,
             examId: exam!.id,
             courseId: courseId,
-            caScore: ca,
+            caScore: caScore,
             examScore: examScore,
             totalScore: total,
             grade: grade,
@@ -77,10 +86,14 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, message: "Results saved!" });
 
-  } catch (error: any) {
+  } catch (error: unknown) { // 🟢 Fixed: Replaced 'any' with 'unknown'
     console.error("RESULT_SAVE_ERROR:", error);
+    
+    // Safely extract the error message
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    
     return NextResponse.json(
-      { error: "Internal Server Error", details: error.message }, 
+      { error: "Internal Server Error", details: errorMessage }, 
       { status: 500 }
     );
   }

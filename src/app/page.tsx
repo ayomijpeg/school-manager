@@ -91,7 +91,8 @@ export default function Home() {
 
       {/* --- Main Hero Section --- */}
       <main className="grow pt-20">
-        <div className="relative min-h-[700px] flex items-center justify-center bg-slate-900 overflow-hidden">
+        {/* 🟢 FIXED: Updated min-h-[700px] to min-h-175 */}
+        <div className="relative min-h-175 flex items-center justify-center bg-slate-900 overflow-hidden">
           
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
@@ -102,13 +103,13 @@ export default function Home() {
               className="object-cover" 
               priority 
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/60 via-slate-900/80 to-slate-900"></div>
+            {/* 🟢 FIXED: Updated bg-gradient-to-b to bg-linear-to-b */}
+            <div className="absolute inset-0 bg-linear-to-b from-slate-900/60 via-slate-900/80 to-slate-900"></div>
           </div>
 
           {/* Content */}
           <div className="relative z-10 w-full max-w-6xl mx-auto px-6 mt-10 grid lg:grid-cols-2 gap-12 items-center">
             
-            {/* Left Text */}
             <div className="text-left">
               <span className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-slate-800/80 backdrop-blur-md border border-slate-700 text-amber-400 text-xs font-bold tracking-widest uppercase mb-6 shadow-lg">
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
@@ -140,9 +141,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Side: Mock Portal UI Element to make it feel like a software gateway */}
             <div className="hidden lg:block relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-amber-300 rounded-2xl blur opacity-30"></div>
+              {/* 🟢 FIXED: Updated bg-gradient-to-r to bg-linear-to-r */}
+              <div className="absolute -inset-1 bg-linear-to-r from-amber-500 to-amber-300 rounded-2xl blur opacity-30"></div>
               <div className="relative bg-slate-800/80 backdrop-blur-xl border border-slate-700 p-6 rounded-2xl shadow-2xl">
                 <div className="flex items-center justify-between border-b border-slate-700 pb-4 mb-4">
                   <div className="flex space-x-2">
@@ -169,9 +170,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* --- NEW: Portal Capabilities Section --- */}
+        {/* --- Portal Capabilities Section --- */}
         <section id="features" className="py-20 px-6 bg-slate-900 border-t border-slate-800 text-white relative overflow-hidden">
-          {/* Subtle background glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-full bg-amber-500/10 blur-[100px] pointer-events-none"></div>
           
           <div className="max-w-6xl mx-auto relative z-10">
@@ -200,7 +200,7 @@ export default function Home() {
               <div>
                 <div className="mb-12">
                   <h2 className="text-2xl md:text-3xl font-extrabold text-amber-600 font-serif uppercase tracking-widest mb-4">Our Vision</h2>
-                  <h3 className="text-3xl md:text-4xl font-bold text-slate-900 font-serif leading-tight">
+                  <h3 className="text-xl md:text-2xl  text-slate-700 font-serif leading-tight">
                     To lead holistic, inclusive, innovative world-class education.
                   </h3>
                 </div>
@@ -210,8 +210,9 @@ export default function Home() {
                   <p className="text-xl md:text-2xl text-slate-700 font-serif leading-relaxed mb-6">
                     Our mission is to promote lifelong learning in an open and caring atmosphere that motivates students to be confident and responsible global citizens.
                   </p>
+                  {/* 🟢 FIXED: Escaped student's to student&apos;s */}
                   <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg text-amber-900 text-sm font-medium">
-                    This portal is designed to digitally support this mission, ensuring parents and educators remain aligned in every student's journey.
+                    This portal is designed to digitally support this mission, ensuring parents and educators remain aligned in every student&apos;s journey.
                   </div>
                 </div>
               </div>
@@ -229,7 +230,8 @@ export default function Home() {
                          className="object-cover group-hover:scale-110 transition-transform duration-700"
                          sizes="(max-width: 768px) 100vw, 50vw"
                        />
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+                       {/* 🟢 FIXED: Updated bg-gradient-to-t to bg-linear-to-t */}
+                       <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent opacity-60"></div>
                     </div>
                     <div className="h-32 bg-amber-50 rounded-2xl flex flex-col items-center justify-center text-amber-600 p-6 text-center border border-amber-100">
                        <div className="text-xs uppercase tracking-wide font-semibold opacity-80">Years of Excellence</div>
@@ -249,7 +251,8 @@ export default function Home() {
                          className="object-cover group-hover:scale-110 transition-transform duration-700"
                          sizes="(max-width: 768px) 100vw, 50vw"
                        />
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+                       {/* 🟢 FIXED: Updated bg-gradient-to-t to bg-linear-to-t */}
+                       <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent opacity-60"></div>
                     </div>
                  </div>
               </div>
@@ -263,7 +266,8 @@ export default function Home() {
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold text-slate-900 font-serif mb-4">The Yosola Advantage</h2>
-              <p className="text-slate-600 max-w-2xl mx-auto">Discover what makes our educational approach unique and why we are the best choice for your child's future.</p>
+              {/* 🟢 FIXED: Escaped child's to child&apos;s */}
+              <p className="text-slate-600 max-w-2xl mx-auto">Discover what makes our educational approach unique and why we are the best choice for your child&apos;s future.</p>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
