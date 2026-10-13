@@ -16,11 +16,12 @@ const updateCourseSchema = z.object({
 // --- GET A SINGLE COURSE (GET) ---
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const course = await prisma.course.findUniqueOrThrow({
-      where: { id: params.id },
+      where: { id },
       include: {
         level: { select: { name: true } },
         department: { select: { name: true } },
@@ -39,14 +40,15 @@ export async function GET(
 // --- UPDATE A SINGLE COURSE (PUT) ---
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const data = updateCourseSchema.parse(body);
 
     const updatedCourse = await prisma.course.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(data.name !== undefined && { name: data.name }),
         ...(data.description !== undefined && { description: data.description }),
@@ -75,11 +77,12 @@ export async function PUT(
 // --- DELETE A SINGLE COURSE (DELETE) ---
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     await prisma.course.delete({
-      where: { id: params.id },
+      where: { id },
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {

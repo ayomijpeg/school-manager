@@ -12,13 +12,13 @@ import { debounce } from '@/lib/utils';
 interface Student {
   id: string;
   fullName: string;
-  matricNumber: string;
+  matricNumber?: string | null;
 }
 
 interface ParentData {
   id?: string;
   fullName?: string;
-  contactPhone?: string;
+  contactPhone?: string | null;
   user?: { email: string };
   students?: { studentId: string; student: Student }[];
 }

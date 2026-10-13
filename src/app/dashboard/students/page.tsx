@@ -5,7 +5,8 @@ import {
   Search, 
   GraduationCap, 
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  IdCard
 } from 'lucide-react';
 import { SchoolType } from '@prisma/client';
 import StudentActions from '@/components/students/StudentActions';
@@ -33,7 +34,7 @@ async function getStudents(query: string) {
         _count: { select: { parents: true } },
         enrollments: {
           orderBy: { academicYear: 'desc' },
-          take: 1,
+          take: 5,
           include: { class: true }
         },
         user: { select: { email: true } },
@@ -72,8 +73,15 @@ export default async function StudentListPage({
           <h1 className="text-3xl font-serif text-slate-900 tracking-tight">Student Directory</h1>
           <p className="text-slate-500 mt-1">Manage admissions, academic records, and student profiles.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <RefreshButton />
+          <Link
+            href="/dashboard/students/id-cards"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-full text-sm font-medium hover:bg-slate-50 transition-all shadow-sm"
+          >
+            <IdCard className="w-4 h-4 text-emerald-700" />
+            <span>Print ID Cards</span>
+          </Link>
           <ExportButton />
           <ImportActions />
           <Link href="/dashboard/students/add" className="flex items-center gap-2 px-5 py-2 bg-emerald-800 text-white rounded-full text-sm font-medium hover:bg-emerald-900 shadow-lg transition-all">
@@ -99,7 +107,7 @@ export default async function StudentListPage({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full min-w-[720px] text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/50">
                   <th className="py-4 pl-6 text-xs font-bold uppercase text-slate-500">Student Identity</th>
@@ -112,7 +120,8 @@ export default async function StudentListPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {students.map((student) => {
-                  const currentClass = student.enrollments[0]?.class?.name || 'Unassigned';
+                  const currentEnrollment = student.enrollments.find((e) => e.academicYear === currentYear) || student.enrollments[0];
+                  const currentClass = currentEnrollment?.class?.name || 'Unassigned';
                   const isLinked = student._count.parents > 0;
                   
                   return (

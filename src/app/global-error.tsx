@@ -24,8 +24,11 @@ export default function GlobalError({
             A critical error occurred. Please refresh the page or try again later.
           </p>
           <button
-            onClick={() => reset()}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium"
+            onClick={() => {
+              reset();
+              window.location.reload();
+            }}
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium cursor-pointer"
           >
             Try again
           </button>

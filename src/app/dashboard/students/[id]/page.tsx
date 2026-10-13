@@ -14,6 +14,10 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
+import WhatsAppButton from '@/components/ui/WhatsAppButton';
+import { buildFeeReminderMessage, buildGeneralMessage } from '@/lib/whatsapp';
+import { ShieldCheck, Phone } from 'lucide-react';
+
 export default async function StudentDetailPage({
   params,
 }: {
@@ -24,19 +28,28 @@ export default async function StudentDetailPage({
 
   const { id } = await params;
 
-  const student = await prisma.student.findUnique({
-    where: { id, deletedAt: null },
-    include: {
-      level: true,
-      department: true,
-      user: { select: { email: true } },
-      invoices: {
-        orderBy: { issueDate: 'desc' },
-        take: 10,
+  const [student, config] = await Promise.all([
+    prisma.student.findUnique({
+      where: { id, deletedAt: null },
+      include: {
+        level: true,
+        department: true,
+        user: { select: { email: true } },
+        invoices: {
+          orderBy: { issueDate: 'desc' },
+          take: 10,
+        },
+        parents: { 
+          include: { 
+            parent: { 
+              select: { id: true, fullName: true, contactPhone: true } 
+            } 
+          } 
+        },
       },
-      parents: { include: { parent: { select: { id: true, fullName: true } } } },
-    },
-  });
+    }),
+    prisma.schoolConfig.findFirst()
+  ]);
 
   if (!student) notFound();
 
@@ -56,6 +69,21 @@ export default async function StudentDetailPage({
     (sum, inv) => sum + (Number(inv.totalAmount) - Number(inv.amountPaid)),
     0
   );
+
+  const primaryParent = student.parents[0]?.parent;
+  const parentPhone = primaryParent?.contactPhone || student.contactPhone;
+
+  const feeReminderMessage = buildFeeReminderMessage({
+    parentName: primaryParent?.fullName,
+    studentName: student.fullName,
+    className: student.level?.name,
+    amountDue: pendingBalance,
+    term: config?.currentTerm,
+    schoolName: config?.schoolName,
+    bankName: config?.bankName,
+    accountNumber: config?.accountNumber,
+    accountName: config?.accountName,
+  });
 
   return (
     <div className="max-w-4xl mx-auto p-6 md:p-8 animate-in fade-in duration-500">
@@ -131,19 +159,26 @@ export default async function StudentDetailPage({
       </div>
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div className="flex flex-wrap gap-3 mb-6 items-center">
         <Link
           href="/dashboard/billing"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-800 text-white rounded-xl text-sm font-medium hover:bg-emerald-900"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-800 text-white rounded-xl text-sm font-medium hover:bg-emerald-900 shadow-sm"
         >
           <Receipt className="w-4 h-4" /> View all invoices
         </Link>
         <Link
           href="/dashboard/results"
-          className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50"
+          className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 shadow-sm"
         >
           <FileText className="w-4 h-4" /> Report card
         </Link>
+        {user.role === 'ADMIN' && pendingBalance > 0 && (
+          <WhatsAppButton
+            phone={parentPhone}
+            message={feeReminderMessage}
+            label="Send WhatsApp Fee Reminder"
+          />
+        )}
       </div>
 
       {/* Recent invoices */}
@@ -204,26 +239,50 @@ export default async function StudentDetailPage({
         )}
       </section>
 
-      {/* Linked parents (admin only) */}
-      {user.role === 'ADMIN' && student.parents.length > 0 && (
-        <section className="mt-6 bg-white border border-slate-200 rounded-2xl p-6">
-          <h2 className="font-serif font-bold text-slate-800 flex items-center gap-2 mb-4">
-            <User className="w-5 h-5 text-slate-500" /> Linked guardians
+      {/* Authorized Dismissal & Pickup Contacts */}
+      <section className="mt-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-serif font-bold text-slate-800 flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-emerald-600" /> Authorized Dismissal & Pickup Contacts
           </h2>
-          <ul className="space-y-2">
-            {student.parents.map(({ parent }) => (
-              <li key={parent.id}>
-                <Link
-                  href={`/dashboard/parents/${parent.id}`}
-                  className="text-emerald-700 hover:underline font-medium"
-                >
-                  {parent.fullName}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">
+            Pupil Safety Record
+          </span>
+        </div>
+
+        {student.parents.length === 0 ? (
+          <p className="text-sm text-slate-400 italic">No parent/guardian linked yet. Link a parent from the Parents directory.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {student.parents.map(({ parent }) => {
+              const chatMsg = `Hello Mr/Mrs ${parent.fullName}, this is from Yosola Schools regarding your ward ${student.fullName}.`;
+              return (
+                <div key={parent.id} className="p-3.5 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
+                  <div>
+                    <Link
+                      href={`/dashboard/parents/${parent.id}`}
+                      className="font-bold text-slate-900 hover:text-emerald-700 text-sm block"
+                    >
+                      {parent.fullName}
+                    </Link>
+                    <span className="text-xs text-slate-500 font-mono flex items-center gap-1 mt-0.5">
+                      <Phone className="w-3 h-3 text-slate-400" /> {parent.contactPhone || 'No phone recorded'}
+                    </span>
+                  </div>
+                  {parent.contactPhone && (
+                    <WhatsAppButton
+                      phone={parent.contactPhone}
+                      message={chatMsg}
+                      variant="secondary"
+                      label="Chat"
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

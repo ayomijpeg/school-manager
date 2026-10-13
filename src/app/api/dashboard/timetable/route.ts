@@ -55,8 +55,8 @@ export async function GET() {
       acc[day].push({
         id: slot.id,
         className: slot.class.name,
-        subject: slot.course.name,
-        code: slot.course.code,
+        subject: slot.course?.name || 'General',
+        code: slot.course?.code || 'GEN',
         venue: slot.venue?.name || "Classroom",
         // Format dates to simple time strings "08:30 AM"
         startTime: new Date(slot.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),

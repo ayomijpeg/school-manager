@@ -51,7 +51,7 @@ export default async function ResultsHubPage() {
         {assignments.map((assign) => (
           <Link 
             key={assign.id} 
-            href={`/dashboard/teachers/results/${assign.class.id}?courseId=${assign.course.id}`}
+            href={`/dashboard/teachers/results/${assign.class.id}?courseId=${assign.course?.id}`}
             className="group block bg-white border border-gray-200 rounded-xl p-5 hover:border-indigo-500 hover:shadow-md transition-all"
           >
             <div className="flex justify-between items-center">
@@ -61,7 +61,7 @@ export default async function ResultsHubPage() {
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
-                    {assign.course.name}
+                    {assign.course?.name}
                   </span>
                   <span className="text-xs text-gray-400 flex items-center gap-1">
                     <User className="w-3 h-3" /> {assign.class._count.enrollments} Students

@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
     // 3. VALIDATION PHASE
     const errors: string[] = [];
-    const validStudents = [];
+    const validStudents: any[] = [];
 
     // --- Safety Checks ---
     const emailsToCheck = rows

@@ -62,7 +62,6 @@ export async function PATCH(
           dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
           levelId: body.levelId,
           departmentId: body.departmentId || null,
-          gender: body.gender
         }
       });
 

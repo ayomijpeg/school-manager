@@ -27,7 +27,7 @@ export async function POST(request: Request) {
         courseId: data.courseId,
         examDate: new Date(data.examDate), // Convert string to Date
         durationMinutes: data.durationMinutes,
-        room: data.room,
+        venueId: data.room || undefined,
       },
     });
 

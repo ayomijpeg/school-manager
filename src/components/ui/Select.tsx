@@ -15,6 +15,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   className?: string; // Class for the wrapper
   selectClassName?: string; // Class for the <select> element itself
   options: SelectOption[]; // Array of { value, label } objects
+  placeholder?: string;
 }
 
 const Select = forwardRef<HTMLSelectElement, SelectProps>(

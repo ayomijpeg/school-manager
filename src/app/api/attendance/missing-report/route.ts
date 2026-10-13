@@ -73,8 +73,8 @@ export async function GET(request: NextRequest) {
     // 5. Format the report for the Admin
     const formattedReport = missingReports.map(slot => ({
       className: `${slot.class.level.name} ${slot.class.name}`,
-      courseName: slot.course.name,
-      teacherName: slot.teacher.fullName,
+      courseName: slot.course?.name || 'General',
+      teacherName: slot.teacher?.fullName || 'Unassigned',
       status: 'MISSING',
     }));
 

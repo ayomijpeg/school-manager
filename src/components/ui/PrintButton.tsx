@@ -1,16 +1,25 @@
-'use client'; // 👈 This line makes it interactive
+'use client';
 
 import React from 'react';
 import { Printer } from 'lucide-react';
 
-export default function PrintButton() {
+interface PrintButtonProps {
+  label?: string;
+  className?: string;
+}
+
+export default function PrintButton({
+  label = 'Print',
+  className = 'flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm transition-all shadow-sm cursor-pointer',
+}: PrintButtonProps) {
   return (
-    <button 
-      onClick={() => window.print()} 
-      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20"
+    <button
+      type="button"
+      onClick={() => window.print()}
+      className={className}
     >
-      <Printer size={14} /> 
-      Download Report Card
+      <Printer size={18} />
+      <span>{label}</span>
     </button>
   );
 }

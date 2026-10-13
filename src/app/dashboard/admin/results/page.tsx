@@ -28,6 +28,8 @@ interface StudentReport {
     totalScore: number;
     average: string;
     subjectCount: number;
+    position?: number;
+    positionText?: string;
   };
 }
 
@@ -64,8 +66,11 @@ const ReportCardView = ({ student }: { student: StudentReport }) => (
          <span className="font-mono">{student.matricNumber}</span>
       </div>
       <div className="text-right">
-         <span className="text-slate-500 text-xs block uppercase">Performance</span>
+         <span className="text-slate-500 text-xs block uppercase">Performance & Rank</span>
          <span className="font-bold text-emerald-600 text-lg">{student.summary.average}% Avg</span>
+         {student.summary.positionText && (
+           <span className="block text-xs font-bold text-slate-700 mt-0.5">Rank: {student.summary.positionText}</span>
+         )}
       </div>
     </div>
 
@@ -93,13 +98,44 @@ const ReportCardView = ({ student }: { student: StudentReport }) => (
       </tbody>
     </table>
 
+    {/* Behavioral & Affective Domain */}
+    <div className="mt-6 border border-slate-200 rounded-lg p-3 bg-slate-50">
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-[11px] font-bold uppercase text-slate-700">Affective & Psychomotor Domain (Rating: 1 - 5)</span>
+        <span className="text-[10px] text-slate-400">5=Excellent, 4=Good, 3=Fair</span>
+      </div>
+      <div className="grid grid-cols-4 gap-2 text-xs">
+        {[
+          { trait: 'Punctuality', score: 5 },
+          { trait: 'Neatness', score: 5 },
+          { trait: 'Politeness', score: 5 },
+          { trait: 'Honesty', score: 5 },
+          { trait: 'Attentiveness', score: 4 },
+          { trait: 'Teamwork', score: 5 },
+          { trait: 'Sports', score: 4 },
+          { trait: 'Handwriting', score: 4 },
+        ].map((item, idx) => (
+          <div key={idx} className="bg-white p-1.5 rounded border border-slate-200 flex justify-between items-center text-[11px]">
+            <span className="text-slate-600 truncate">{item.trait}</span>
+            <span className="font-bold text-emerald-700 font-mono ml-1">{item.score}/5</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Resumption Notice */}
+    <div className="mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-slate-700">
+      <p className="font-bold text-emerald-900 uppercase text-[10px] tracking-wider mb-0.5">Next Term Resumption & Fees Notice</p>
+      <p>School resumes on <strong>Monday, 11th January 2027</strong>. Please ensure termly school fees are settled before resumption.</p>
+    </div>
+
     {/* Signatures */}
-    <div className="mt-10 grid grid-cols-2 gap-10 pt-4 border-t border-slate-200">
+    <div className="mt-8 grid grid-cols-2 gap-10 pt-4 border-t border-slate-200">
        <div className="border-t border-slate-400 pt-2 text-center">
-           <p className="text-[10px] font-bold text-slate-400 uppercase">Class Teacher</p>
+           <p className="text-[10px] font-bold text-slate-400 uppercase">Class Teacher Signature</p>
        </div>
        <div className="border-t border-slate-400 pt-2 text-center">
-           <p className="text-[10px] font-bold text-slate-400 uppercase">Principal</p>
+           <p className="text-[10px] font-bold text-slate-400 uppercase">Principal Signature & Stamp</p>
        </div>
     </div>
     

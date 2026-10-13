@@ -12,10 +12,10 @@ const linkStudentSchema = z.object({
 // --- LINK A STUDENT TO A PARENT (POST) ---
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }, // Get parentId from URL
+  { params }: { params: Promise<{ id: string }> }, // Get parentId from URL
 ) {
   try {
-    const parentId = params.id;
+    const { id: parentId } = await params;
     const body = await request.json();
     const { studentId } = linkStudentSchema.parse(body);
 

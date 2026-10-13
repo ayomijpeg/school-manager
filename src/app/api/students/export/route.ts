@@ -15,14 +15,13 @@ export async function GET() {
     });
 
     // 2. Define CSV Headers
-    const headers = ['Full Name', 'Matric Number', 'Email', 'Gender', 'Level', 'Department', 'Phone', 'Date Created'];
+    const headers = ['Full Name', 'Matric Number', 'Email', 'Level', 'Department', 'Phone', 'Date Created'];
     
     // 3. Map Data to CSV Rows
     const rows = students.map(s => [
       `"${s.fullName}"`, // Quote strings to handle commas in names
       s.matricNumber,
       s.user.email,
-      s.gender || 'N/A',
       s.level?.name || 'N/A',
       s.department?.name || 'N/A',
       s.contactPhone || '',

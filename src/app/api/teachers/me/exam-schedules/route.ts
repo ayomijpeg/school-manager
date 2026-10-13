@@ -42,16 +42,20 @@ export async function GET(request: NextRequest) {
 
     // 4. Find all exam schedules matching those assignments
     // We need to create OR conditions: (class1 AND course1) OR (class2 AND course2) ...
-    const scheduleConditions = assignments.map(a => ({
+    const scheduleConditions = assignments
+      .filter((a): a is { classId: string; courseId: string } => a.courseId !== null)
+      .map(a => ({
         classId: a.classId,
         courseId: a.courseId,
-    }));
+      }));
+
+    if (scheduleConditions.length === 0) {
+      return NextResponse.json([], { status: 200 });
+    }
 
     const schedules = await prisma.examSchedule.findMany({
       where: {
         OR: scheduleConditions,
-        // Optional: Filter for upcoming exams only?
-        // examDate: { gte: new Date() }
       },
       include: {
         exam: { select: { name: true, academicYear: true } },

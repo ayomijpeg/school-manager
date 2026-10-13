@@ -3,6 +3,7 @@
 import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, TrendingUp, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Level {
   id: string;
@@ -26,13 +27,29 @@ export default function PromoteStudentModal({ student, levels, currentYear }: Pr
   const [selectedClass, setSelectedClass] = useState('');
   const [targetYear, setTargetYear] = useState(currentYear);
 
+  // Compute next year helper (e.g. 2025/2026 -> 2026/2027)
+  const computeNextYear = (curr: string) => {
+    const parts = curr.split('/');
+    if (parts.length === 2) {
+      const y1 = parseInt(parts[0], 10);
+      const y2 = parseInt(parts[1], 10);
+      if (!isNaN(y1) && !isNaN(y2)) return `${y1 + 1}/${y2 + 1}`;
+    }
+    return curr;
+  };
+  const nextYearSuggestion = computeNextYear(currentYear);
+
   const handlePromote = () => {
     if (!selectedLevel || !selectedClass) {
         setError("Please select both a level and a class.");
         return;
     }
 
-    // Using startTransition to handle the loading state automatically
+    if (!targetYear.trim()) {
+      setError("Please specify the target academic session.");
+      return;
+    }
+
     startTransition(async () => {
       setError(null);
       try {
@@ -43,19 +60,20 @@ export default function PromoteStudentModal({ student, levels, currentYear }: Pr
             studentId: student.id,
             newLevelId: selectedLevel,
             newClassId: selectedClass,
-            newAcademicYear: targetYear,
+            newAcademicYear: targetYear.trim(),
           }),
         });
 
         const data = await response.json();
 
         if (response.ok && data.success) {
+          toast.success(`${student.fullName} promoted to new class!`);
           setIsOpen(false);
-          router.refresh(); // Tells Next.js to fetch fresh data for the list
+          router.refresh();
         } else {
           setError(data.error || "An error occurred during promotion");
         }
-      } catch  {
+      } catch {
         setError("Failed to connect to the server.");
       }
     });
@@ -129,8 +147,27 @@ export default function PromoteStudentModal({ student, levels, currentYear }: Pr
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"
               value={targetYear}
               onChange={(e) => setTargetYear(e.target.value)}
-              placeholder="e.g. 2024/2025"
+              placeholder="e.g. 2025/2026"
             />
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[11px] text-slate-400">Presets:</span>
+              <button
+                type="button"
+                onClick={() => setTargetYear(currentYear)}
+                className={`px-2 py-0.5 rounded text-xs font-medium border ${targetYear === currentYear ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}
+              >
+                Current ({currentYear})
+              </button>
+              {nextYearSuggestion !== currentYear && (
+                <button
+                  type="button"
+                  onClick={() => setTargetYear(nextYearSuggestion)}
+                  className={`px-2 py-0.5 rounded text-xs font-medium border ${targetYear === nextYearSuggestion ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}
+                >
+                  Next ({nextYearSuggestion})
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

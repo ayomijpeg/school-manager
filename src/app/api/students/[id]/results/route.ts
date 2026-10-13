@@ -6,11 +6,11 @@ import { NextResponse, NextRequest } from 'next/server';
 // --- GET ALL RESULTS FOR A SINGLE STUDENT (GET) ---
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }, // 'id' here is the Student ID
+  { params }: { params: Promise<{ id: string }> }, // 'id' here is the Student ID
 ) {
   try {
     // 1. Get the studentId from the URL
-    const studentId = params.id;
+    const { id: studentId } = await params;
 
     // 2. Find all results for this student
     const results = await prisma.result.findMany({

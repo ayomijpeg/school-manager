@@ -45,7 +45,26 @@ export async function GET(request: Request) {
     // Sort by Total Score to determine class position
     processed.sort((a, b) => b.summary.totalScore - a.summary.totalScore);
 
-    return NextResponse.json(processed);
+    // Assign class rank / position (e.g. 1st out of 30)
+    const withPosition = processed.map((s, idx) => {
+      const pos = idx + 1;
+      const suffix = (n: number) => {
+        if (n % 10 === 1 && n % 100 !== 11) return 'st';
+        if (n % 10 === 2 && n % 100 !== 12) return 'nd';
+        if (n % 10 === 3 && n % 100 !== 13) return 'rd';
+        return 'th';
+      };
+      return {
+        ...s,
+        summary: {
+          ...s.summary,
+          position: pos,
+          positionText: `${pos}${suffix(pos)} out of ${processed.length}`,
+        }
+      };
+    });
+
+    return NextResponse.json(withPosition);
   } catch (error) {
     console.error("Broadsheet Error:", error);
     return NextResponse.json({ error: 'Failed to fetch results' }, { status: 500 });

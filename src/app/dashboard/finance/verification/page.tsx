@@ -51,7 +51,8 @@ export default async function PaymentVerificationPage() {
 
       {/* TABLE CONTENT */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden min-h-[400px]">
-        <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[680px] text-left border-collapse">
           {/* 🟢 ADDED TABLE HEADERS */}
           <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase font-bold text-slate-500">
             <tr>
@@ -147,6 +148,7 @@ export default async function PaymentVerificationPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

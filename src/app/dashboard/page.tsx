@@ -11,6 +11,8 @@ import StudentDashboard from '@/components/dashboard/StudentDashboard';
 import ParentDashboard from '@/components/dashboard/ParentDashboard';
 import { Loader2 } from 'lucide-react';
 import type { SchoolConfig } from '@prisma/client';
+import { getCelebrantsThisWeek } from '@/lib/celebrants';
+import type { BirthdayCelebrant } from '@/components/dashboard/BirthdayWidget';
 
 // 1. Define Strict Types for Server Data
 type DashboardCounts = {
@@ -26,7 +28,8 @@ type DashboardData =
       status: 'SUCCESS'; 
       user: { id: string; email: string; role: string }; // Changed from 'User' to specific fields
       config: SchoolConfig; 
-      counts: DashboardCounts 
+      counts: DashboardCounts;
+      celebrants?: BirthdayCelebrant[];
     } 
   | { status: 'DB_ERROR'; error: string }
   | { status: 'UNAUTHORIZED' }
@@ -44,10 +47,11 @@ async function getDashboardData(): Promise<DashboardData> {
     if (!config || !config.isSetupDone) return { status: 'SETUP_REQUIRED' };
 
     let counts: DashboardCounts = null;
+    let celebrants: BirthdayCelebrant[] = [];
     
     // Only fetch expensive stats if the user is an Admin
-   if (user.role === 'ADMIN') {
-    const [studentCount, teacherCount, classCount, invoiceAgg] = await Promise.all([
+    if (user.role === 'ADMIN') {
+      const [studentCount, teacherCount, classCount, invoiceAgg, celebrantsList] = await Promise.all([
         prisma.student.count({ where: { deletedAt: null } }),
         prisma.teacher.count(),
         prisma.class.count(),
@@ -57,32 +61,36 @@ async function getDashboardData(): Promise<DashboardData> {
           },
           _sum: { totalAmount: true, amountPaid: true },
         }),
-    ]);
+        getCelebrantsThisWeek(),
+      ]);
 
-    // Calculate remaining debt
-    const pendingRevenue = Number(invoiceAgg._sum.totalAmount ?? 0) - Number(invoiceAgg._sum.amountPaid ?? 0);
-    
-    // Count invoices that still have a balance
-    const pendingCount = await prisma.invoice.count({ 
-      where: { 
-        status: { in: ['PENDING', 'OVERDUE', 'PARTIALLY_PAID'] } 
-      } 
-    });
+      celebrants = celebrantsList;
 
-    counts = {
-      students: studentCount,
-      teachers: teacherCount,
-      classes: classCount,
-      invoices: pendingCount, 
-      pendingRevenue,
-    };
-}
+      // Calculate remaining debt
+      const pendingRevenue = Number(invoiceAgg._sum.totalAmount ?? 0) - Number(invoiceAgg._sum.amountPaid ?? 0);
+      
+      // Count invoices that still have a balance
+      const pendingCount = await prisma.invoice.count({ 
+        where: { 
+          status: { in: ['PENDING', 'OVERDUE', 'PARTIALLY_PAID'] } 
+        } 
+      });
+
+      counts = {
+        students: studentCount,
+        teachers: teacherCount,
+        classes: classCount,
+        invoices: pendingCount, 
+        pendingRevenue,
+      };
+    }
 
     return {
       status: 'SUCCESS',
       user,
       config,
-      counts
+      counts,
+      celebrants,
     };
   } catch (error) {
     console.error("Database connection error:", error);
@@ -120,12 +128,13 @@ export default async function DashboardPage() {
   if (data.status === 'SETUP_REQUIRED') redirect('/setup');
 
   const { user, config, counts } = data;
+  const celebrants = 'celebrants' in data ? data.celebrants : undefined;
 
   // --- Scenario C: Role Routing ---
   switch (user.role) {
     case 'ADMIN':
       // Client Component (Interactive)
-      return <DashboardClient config={config} counts={counts} />;
+      return <DashboardClient config={config} counts={counts} celebrants={celebrants} />;
     
     case 'TEACHER':
       // Client Component (Interactive)

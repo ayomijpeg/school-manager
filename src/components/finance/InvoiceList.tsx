@@ -33,7 +33,7 @@ export default function InvoiceList({ initialInvoices }: { initialInvoices: Invo
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse">
+      <table className="w-full min-w-[640px] text-left border-collapse">
         <thead>
           <tr className="border-b border-slate-100 bg-slate-50/30">
             <th className="py-3 pl-6 pr-4 text-xs font-bold uppercase text-slate-500">Invoice #</th>

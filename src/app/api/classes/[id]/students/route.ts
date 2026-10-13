@@ -5,10 +5,10 @@ import { Prisma } from '@prisma/client';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }, // 'id' here is the classId
+  { params }: { params: Promise<{ id: string }> }, // 'id' here is the classId
 ) {
   try {
-    const classId = params.id;
+    const { id: classId } = await params;
 
     // Find all enrollments for this class (for the current year?)
     // We might need to add an academicYear filter later.

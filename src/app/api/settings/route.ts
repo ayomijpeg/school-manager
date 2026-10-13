@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export async function GET() {
+  try {
+    const config = await prisma.schoolConfig.findFirst();
+    return NextResponse.json(config || {});
+  } catch (error) {
+    console.error("Settings Fetch Error:", error);
+    return NextResponse.json({ error: "Failed to fetch settings" }, { status: 500 });
+  }
+}
+
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
@@ -34,6 +44,7 @@ export async function PATCH(req: Request) {
       config = await prisma.schoolConfig.create({
         data: {
           schoolName: body.schoolName || "My School",
+          schoolType: body.schoolType || "BASIC",
           academicYear: body.academicYear || "2025/2026",
           currentTerm: body.currentTerm || "First Term",
           motto: body.motto,

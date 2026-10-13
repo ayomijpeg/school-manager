@@ -8,6 +8,7 @@ import RefreshButton from '@/components/ui/RefreshButton';
 import AdminDashboard from '@/components/dashboard/AdminDashboard';
 import TeacherDashboard from '@/components/dashboard/TeacherDashboard';
 import type { SchoolConfig } from '@prisma/client';
+import type { BirthdayCelebrant } from '@/components/dashboard/BirthdayWidget';
 
 // Define the exact shape of the counts object
 type DashboardCounts = {
@@ -22,9 +23,10 @@ type DashboardDataProps = {
   config: SchoolConfig;
   // Counts can be null if the user is not an Admin
   counts: DashboardCounts | null;
+  celebrants?: BirthdayCelebrant[];
 };
 
-export function DashboardClient({ config, counts }: DashboardDataProps) {
+export function DashboardClient({ config, counts, celebrants }: DashboardDataProps) {
   const { user, isLoading, isAuthenticated } = useUser();
   const router = useRouter();
 
@@ -88,14 +90,14 @@ export function DashboardClient({ config, counts }: DashboardDataProps) {
              <div className="flex items-center justify-end gap-3">
                <div className="text-right">
                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                   {user.fullName || user.email}
+                   {(user as { fullName?: string; email: string }).fullName || user.email}
                  </p>
                  <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
                    {user.role.toLowerCase()}
                  </p>
                </div>
                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-serif font-bold">
-                 {(user.fullName?.[0] || user.email?.[0] || 'U').toUpperCase()}
+                 {((user as { fullName?: string; email: string }).fullName?.[0] || user.email?.[0] || 'U').toUpperCase()}
                </div>
              </div>
           </div>
@@ -109,9 +111,10 @@ export function DashboardClient({ config, counts }: DashboardDataProps) {
              schoolName={config.schoolName}
              schoolType={config.schoolType}
              counts={counts}
+             celebrants={celebrants}
            />
         ) : user.role === 'TEACHER' ? (
-           <TeacherDashboard user={user} />
+           <TeacherDashboard />
         ) : (
            // Fallback for Student/Parent if they accidentally hit this Client Component
            <div className="p-12 text-center border-2 border-dashed border-red-200 rounded-xl bg-red-50 text-red-800">

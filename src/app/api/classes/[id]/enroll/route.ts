@@ -15,10 +15,10 @@ const enrollSchema = z.object({
 // --- ENROLL A STUDENT IN A CLASS (POST) ---
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }, // 'id' here is the classId
+  { params }: { params: Promise<{ id: string }> }, // 'id' here is the classId
 ) {
   try {
-    const classId = params.id;
+    const { id: classId } = await params;
     const body = await request.json();
     const { studentId, academicYear } = enrollSchema.parse(body);
 

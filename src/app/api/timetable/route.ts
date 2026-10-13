@@ -42,8 +42,8 @@ export async function POST(request: Request) {
         courseId: data.courseId,
         teacherId: data.teacherId,
         day: data.day,
-        startTime: timeStringToDate(data.startTime), // Convert string to Date
-        endTime: timeStringToDate(data.endTime),   // Convert string to Date
+        startTime: data.startTime,
+        endTime: data.endTime,
       },
     });
 
@@ -97,12 +97,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Format times back to "HH:MM" for easier frontend use
     const formattedSlots = slots.map(slot => ({
       ...slot,
-      startTime: slot.startTime.toISOString().substring(11, 16), // Extract HH:MM from ISO string
-      endTime: slot.endTime.toISOString().substring(11, 16),
-    }))
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+    }));
 
     return NextResponse.json(formattedSlots, { status: 200 });
   } catch (error) {

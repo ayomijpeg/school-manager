@@ -50,8 +50,8 @@ export async function GET() {
     const formattedClasses = assignments.map(a => ({
       id: a.class.id,
       className: `${a.class.level?.name || ''} ${a.class.name}`, // e.g., "JSS 1 A"
-      subject: a.course.name, 
-      subjectId: a.course.id,
+      subject: a.course?.name || 'General / Form Class', 
+      subjectId: a.course?.id || null,
       students: a.class._count.enrollments,
     }));
 

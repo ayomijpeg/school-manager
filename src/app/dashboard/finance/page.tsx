@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Wallet, AlertCircle, CheckCircle2, Search, ClipboardCheck, Printer, Receipt } from 'lucide-react';
+import { Wallet, AlertCircle, CheckCircle2, Search, ClipboardCheck, Printer, Receipt, ShieldCheck } from 'lucide-react';
 import InvoiceGenerator from '@/components/finance/InvoiceGenerator';
 import InvoiceList from '@/components/finance/InvoiceList';
 import PaymentSettingsModal from '@/components/finance/PaymentSettingsModal';
@@ -74,43 +74,66 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
     <div className="p-6 md:p-8 min-h-screen bg-[#FDFDFC]">
       
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-serif text-slate-900 tracking-tight">Finance Ledger</h1>
-          <p className="text-slate-500 mt-1">Track revenue, manage billing, and verify payments.</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
+      <div className="space-y-4 mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="max-w-xl">
+            <h1 className="text-2xl sm:text-3xl font-serif text-slate-900 tracking-tight">Finance Ledger</h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Track school revenue, manage fee billing, and monitor collections across all levels.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap lg:flex-nowrap">
             <RefreshButton />
-            <Link 
-                href={`/dashboard/finance/print?query=${query}`} 
-                target="_blank" 
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 dark:bg-slate-800 text-white font-bold rounded-xl text-sm hover:bg-slate-800 dark:hover:bg-slate-700 transition-all shadow-sm"
-            >
-                <Printer size={18} />
-                <span className="hidden md:inline">Print List</span>
-            </Link>
+            <PaymentSettingsModal initialConfig={config} /> 
+            <InvoiceGenerator levels={levels} />
+          </div>
+        </div>
 
-           <Link 
-             href="/dashboard/finance/verification"
-             className="relative flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm group"
-           >
-             <ClipboardCheck size={18} className="text-slate-400 group-hover:text-emerald-600 transition-colors" />
-             Verify Claims
-             {pendingCount > 0 && (
-               <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
-                 {pendingCount}
-               </span>
-             )}
-           </Link>
+        {/* FINANCIAL QUICK ACTIONS BAR */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-3 border-t border-slate-100">
+          <Link 
+            href="/dashboard/finance/defaulters"
+            className="flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 text-amber-900 font-semibold rounded-xl text-xs sm:text-sm transition-all shadow-sm active:scale-[0.98] group"
+          >
+            <AlertCircle size={16} className="text-amber-600 group-hover:scale-110 transition-transform" />
+            <span>Fee Debtors</span>
+          </Link>
 
-           <PaymentSettingsModal initialConfig={config} /> 
-           <InvoiceGenerator levels={levels} />
+          <Link 
+            href="/dashboard/finance/exam-passes"
+            className="flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 text-emerald-900 font-semibold rounded-xl text-xs sm:text-sm transition-all shadow-sm active:scale-[0.98] group"
+          >
+            <ShieldCheck size={16} className="text-emerald-600 group-hover:scale-110 transition-transform" />
+            <span>Exam Passes</span>
+          </Link>
+
+          <Link 
+            href="/dashboard/finance/verification"
+            className="relative flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold rounded-xl text-xs sm:text-sm transition-all shadow-sm active:scale-[0.98] group"
+          >
+            <ClipboardCheck size={16} className="text-slate-400 group-hover:text-emerald-600 transition-colors" />
+            <span>Verify Claims</span>
+            {pendingCount > 0 && (
+              <span className="flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                {pendingCount}
+              </span>
+            )}
+          </Link>
+
+          <Link 
+            href={`/dashboard/finance/print?query=${query}`} 
+            target="_blank" 
+            className="flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-slate-900 text-white font-semibold rounded-xl text-xs sm:text-sm hover:bg-slate-800 transition-all shadow-sm active:scale-[0.98] sm:ml-auto"
+          >
+            <Printer size={16} />
+            <span>Print List</span>
+          </Link>
         </div>
       </div>
 
       {/* STATS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
          <StatCard label="Total Expected" value={totalBilled} icon={Wallet} color="blue" />
          <StatCard label="Total Collected" value={totalCollected} icon={CheckCircle2} color="emerald" />
          <StatCard label="Pending / Overdue" value={totalPending} icon={AlertCircle} color="amber" />
@@ -130,7 +153,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
       </div>
 
       {/* MAIN TABLE */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-125">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[480px]">
          <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
             <h3 className="font-bold text-slate-700 font-serif">Invoice History</h3>
             <span className="text-xs text-slate-400">

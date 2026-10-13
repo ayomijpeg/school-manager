@@ -27,7 +27,6 @@ export default async function SettingsPage() {
         <p className="text-slate-500 mt-1">Manage school profile, academic sessions, and security.</p>
       </div>
 
-      {/* @ts-expect-error Server Component types often conflict with Client Props, this is safe */}
       <SettingsForm initialData={config} />
     </div>
   );
