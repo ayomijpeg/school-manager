@@ -23,22 +23,25 @@ export default function MainLayout({ children, schoolConfig }: MainLayoutProps) 
       {/* Pass the toggle function to Header.
          This allows the "Hamburger" icon inside Header to open the Sidebar.
       */}
-      <Header 
-        schoolConfig={schoolConfig} 
-        onMenuClick={() => setIsSidebarOpen(true)} 
-      />
+      {/* Header */}
+      <div className="print:hidden">
+        <Header 
+          schoolConfig={schoolConfig} 
+          onMenuClick={() => setIsSidebarOpen(true)} 
+        />
+      </div>
 
       {/* Content Wrapper */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden print:overflow-visible print:block">
         
-        {/* Desktop sidebar - Hidden on mobile, sticky on desktop */}
-        <div className="hidden md:block h-[calc(100vh-64px)] sticky top-16 shrink-0">
+        {/* Desktop sidebar - Hidden on mobile and completely hidden on print */}
+        <div className="hidden md:block print:hidden h-[calc(100vh-64px)] sticky top-16 shrink-0">
           <Sidebar />
         </div>
 
         {/* Mobile sidebar overlay - Only visible when isSidebarOpen is true */}
         {isSidebarOpen && (
-          <div className="fixed inset-0 z-50 md:hidden">
+          <div className="fixed inset-0 z-50 md:hidden print:hidden">
             {/* Backdrop */}
             <div
               className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
@@ -53,8 +56,8 @@ export default function MainLayout({ children, schoolConfig }: MainLayoutProps) 
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto h-[calc(100vh-64px)] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
-            <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 overflow-y-auto print:overflow-visible print:h-auto print:block h-[calc(100vh-64px)] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+            <div className="p-4 md:p-6 lg:p-8 print:p-0 max-w-7xl mx-auto w-full">
                {children}
             </div>
         </main>

@@ -65,7 +65,7 @@ export default async function StudentIdCardsPage({
   const schoolMotto = config?.motto || 'Knowledge, Discipline & Excellence';
 
   return (
-    <div className="p-6 md:p-8 min-h-screen bg-[#FDFDFC]">
+    <div className="p-6 md:p-8 min-h-screen print:min-h-0 print:p-0 print:m-0 bg-[#FDFDFC] print:bg-white">
       {/* NO-PRINT CONTROLS */}
       <div className="max-w-6xl mx-auto print:hidden mb-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">

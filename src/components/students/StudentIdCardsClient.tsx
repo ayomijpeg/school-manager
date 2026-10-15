@@ -117,14 +117,52 @@ export default function StudentIdCardsClient({
     setSinglePrintId(id);
     setTimeout(() => {
       window.print();
-    }, 50);
+    }, 150);
   };
 
   const allSelected = students.length > 0 && selectedIds.size === students.length;
   const isPrintingSelection = selectedIds.size > 0 && singlePrintId === null;
 
+  // When printing a single card, render ONLY that 1 card in the DOM to eliminate extra blank pages
+  const cardsToRender = useMemo(() => {
+    if (singlePrintId) {
+      const match = students.filter((s) => s.id === singlePrintId);
+      return match.length > 0 ? match : students;
+    }
+    return students;
+  }, [students, singlePrintId]);
+
   return (
     <div>
+      {/* SINGLE CARD BANNER IF ACTIVE ON SCREEN */}
+      {singlePrintId && (
+        <div className="print:hidden bg-emerald-50 border border-emerald-300 rounded-2xl p-4 mb-4 flex items-center justify-between shadow-sm animate-in fade-in duration-200">
+          <div className="flex items-center gap-2">
+            <IdCard className="w-5 h-5 text-emerald-800" />
+            <span className="text-sm font-bold text-emerald-950">
+              Single Card Print Mode active for:{' '}
+              {students.find((s) => s.id === singlePrintId)?.fullName}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => printSingleStudent(singlePrintId)}
+              className="px-3.5 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            >
+              Print Again
+            </button>
+            <button
+              type="button"
+              onClick={() => setSinglePrintId(null)}
+              className="px-3.5 py-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            >
+              Show All Cards ({students.length})
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* SCREEN CONTROLS BAR (Hidden in print) */}
       <div className="print:hidden space-y-4 mb-6">
         {/* ACTION BAR */}
@@ -235,12 +273,24 @@ export default function StudentIdCardsClient({
           /* Page setup for standard A4 ID card sheets */
           @page {
             size: A4 portrait;
-            margin: 8mm;
+            margin: 6mm;
+          }
+
+          html,
+          body {
+            height: auto !important;
+            min-height: 0 !important;
+            background: white !important;
+            color: #000 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
           }
 
           /* General hide */
           .screen-only,
           .no-print,
+          .print\:hidden,
           header,
           nav,
           aside,
@@ -249,42 +299,40 @@ export default function StudentIdCardsClient({
             display: none !important;
           }
 
-          body {
-            background: white !important;
-            color: #000 !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-
           /* Multi-card grid print (8 cards per A4 page) */
           .id-cards-print-grid {
             display: grid !important;
             grid-template-columns: repeat(2, 1fr) !important;
-            gap: 6mm !important;
+            gap: 4mm !important;
             width: 100% !important;
             margin: 0 auto !important;
+            padding: 0 !important;
           }
 
-          /* Single-card print: centered compact layout */
+          /* Single-card print: neat placement on page 1 without spilling to page 2 */
           .id-cards-single-print {
-            display: flex !important;
-            justify-content: center !important;
-            align-items: flex-start !important;
-            padding-top: 15mm !important;
+            display: block !important;
+            width: 86mm !important;
+            margin: 10mm auto !important;
+            padding: 0 !important;
           }
 
           /* ID Card Item */
           .id-card-item {
             display: block !important;
             width: 86mm !important;
-            min-height: 54mm !important;
-            margin: 0 auto 4mm auto !important;
+            height: 54mm !important;
+            max-height: 54mm !important;
+            margin: 0 auto 3mm auto !important;
             break-inside: avoid !important;
             page-break-inside: avoid !important;
+            break-after: auto !important;
+            page-break-after: auto !important;
             border: 1.5px dashed #94a3b8 !important;
             border-radius: 8px !important;
             box-shadow: none !important;
             background: white !important;
+            overflow: hidden !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
@@ -299,22 +347,19 @@ export default function StudentIdCardsClient({
       <div
         className={
           singlePrintId
-            ? 'id-cards-single-print max-w-5xl mx-auto'
+            ? 'id-cards-single-print'
             : 'id-cards-print-grid grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-4 print:gap-3 max-w-5xl mx-auto'
         }
       >
-        {students.map((student) => {
+        {cardsToRender.map((student) => {
           const emergencyPhone =
             student.parents[0]?.parent?.contactPhone || student.contactPhone || '—';
           const isSelected = selectedIds.has(student.id);
 
           // Filtering visibility during printing
           let isHiddenInPrint = false;
-          if (singlePrintId) {
-            // Only the selected single card prints
-            isHiddenInPrint = student.id !== singlePrintId;
-          } else if (isPrintingSelection) {
-            // Only user-selected cards print
+          if (isPrintingSelection) {
+            // Only user-selected cards print in batch mode
             isHiddenInPrint = !isSelected;
           }
 

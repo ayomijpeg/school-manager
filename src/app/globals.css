@@ -39,17 +39,42 @@
 
 /* 4. PRINT STYLES */
 @media print {
-  .no-print, nav, header, aside, button, input[type="checkbox"], .screen-only {
+  @page {
+    margin: 6mm;
+    size: auto;
+  }
+
+  .no-print,
+  .print\:hidden,
+  nav,
+  header,
+  aside,
+  button,
+  input[type="checkbox"],
+  .screen-only {
     display: none !important;
   }
 
-  body {
+  html, body {
     background: white !important;
     color: black !important;
     padding: 0 !important;
     margin: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  main {
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    display: block !important;
   }
 
   /* Retain rich backgrounds and branding colors for printable cards/documents */
@@ -64,6 +89,7 @@
   }
 
   section {
-    page-break-after: always;
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 }
