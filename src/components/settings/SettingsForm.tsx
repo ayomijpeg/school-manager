@@ -15,7 +15,11 @@ import {
   EyeOff,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  Database,
+  AlertTriangle,
+  Trash2,
+  ShieldAlert
 } from 'lucide-react';
 
 // --- 1. FIXED HELPER COMPONENTS ---
@@ -82,6 +86,11 @@ export default function SettingsForm({ initialData }: SettingsFormProps) {
     confirmPassword: ''
   });
 
+  const [cleanPhrase, setCleanPhrase] = useState('');
+  const [cleanPassword, setCleanPassword] = useState('');
+  const [includeTeachers, setIncludeTeachers] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -133,11 +142,56 @@ export default function SettingsForm({ initialData }: SettingsFormProps) {
     }
   };
 
+  const handleCleanData = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (cleanPhrase !== 'CLEAN TEST DATA') {
+      toast.error('Please type "CLEAN TEST DATA" exactly as shown.');
+      return;
+    }
+    if (!cleanPassword) {
+      toast.error('Please enter your administrator password.');
+      return;
+    }
+    if (
+      !window.confirm(
+        '⚠️ FINAL WARNING: This action will permanently delete all test students, parents, invoices, payments, attendance, and results. A backup will be saved automatically. Do you want to proceed?'
+      )
+    ) {
+      return;
+    }
+
+    setIsCleaning(true);
+    try {
+      const res = await fetch('/api/admin/clean-database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirmPhrase: cleanPhrase,
+          password: cleanPassword,
+          includeTeachers,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to clean database');
+
+      toast.success(data.message || 'Database successfully cleaned! Ready for fresh school data.');
+      setCleanPhrase('');
+      setCleanPassword('');
+      router.refresh();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsCleaning(false);
+    }
+  };
+
   const tabs = [
     { id: 'profile', label: 'School Profile', icon: Building2 },
     { id: 'academic', label: 'Academic Session', icon: Calendar },
     { id: 'billing', label: 'Billing & Finance', icon: CreditCard },
     { id: 'security', label: 'Security', icon: Lock },
+    { id: 'launch', label: 'Fresh Launch & Data', icon: Database },
   ];
 
   return (
@@ -397,6 +451,113 @@ export default function SettingsForm({ initialData }: SettingsFormProps) {
                 </button>
               </div>
             </form>
+          )}
+
+          {/* TAB 5: FRESH LAUNCH & DATA CLEAN */}
+          {activeTab === 'launch' && (
+            <div className="space-y-6 max-w-2xl animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Database className="w-5 h-5 text-emerald-700" />
+                  School Launch & Fresh Database Reset
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  When you are ready to onboard real students and families for Yosola Schools, safely purge all mock/test records with an automated backup.
+                </p>
+              </div>
+
+              {/* INFORMATION & SAFEGUARDS BANNER */}
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 space-y-3 text-xs text-amber-900 dark:bg-amber-950/20 dark:border-amber-900/40 dark:text-amber-300">
+                <div className="flex items-center gap-2 font-bold text-amber-950 dark:text-amber-200">
+                  <ShieldAlert className="w-4 h-4 text-amber-600" />
+                  Safety Safeguards & What Happens:
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  <div className="bg-white/80 dark:bg-slate-900/80 p-3 rounded-xl border border-amber-200/60 dark:border-amber-900/30">
+                    <p className="font-bold text-emerald-800 dark:text-emerald-400 mb-1">
+                      ✅ Kept Safe & Intact:
+                    </p>
+                    <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-700 dark:text-slate-300">
+                      <li>Administrator login account</li>
+                      <li>School name, bank details, & motto</li>
+                      <li>Academic session & term setup</li>
+                      <li>Class, Level, & Course structures</li>
+                    </ul>
+                  </div>
+                  <div className="bg-white/80 dark:bg-slate-900/80 p-3 rounded-xl border border-amber-200/60 dark:border-amber-900/30">
+                    <p className="font-bold text-rose-700 dark:text-rose-400 mb-1">
+                      🗑️ Cleaned for Fresh Start:
+                    </p>
+                    <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-700 dark:text-slate-300">
+                      <li>All 242 mock student records</li>
+                      <li>All mock parent profiles & logins</li>
+                      <li>All test invoices & payment receipts</li>
+                      <li>All test attendance & report records</li>
+                    </ul>
+                  </div>
+                </div>
+                <p className="text-[11px] text-amber-800 dark:text-amber-400/90 italic">
+                  💡 A complete pre-clean JSON backup is automatically archived to the <code className="font-mono bg-amber-100 dark:bg-amber-900/50 px-1 rounded">backups/</code> folder prior to cleaning.
+                </p>
+              </div>
+
+              {/* CONFIRMATION FORM */}
+              <form onSubmit={handleCleanData} className="space-y-4 pt-2">
+                <div className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+                  <input
+                    type="checkbox"
+                    id="includeTeachers"
+                    checked={includeTeachers}
+                    onChange={(e) => setIncludeTeachers(e.target.checked)}
+                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300"
+                  />
+                  <label htmlFor="includeTeachers" className="text-xs text-slate-700 dark:text-slate-300 font-medium cursor-pointer">
+                    Also purge test teachers (Leave unchecked to keep current teacher staff accounts)
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    1. Type <span className="text-rose-600 font-mono select-all">CLEAN TEST DATA</span> to confirm
+                  </label>
+                  <InputField
+                    type="text"
+                    required
+                    placeholder="CLEAN TEST DATA"
+                    value={cleanPhrase}
+                    onChange={(e) => setCleanPhrase(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    2. Enter Administrator Password
+                  </label>
+                  <InputField
+                    type="password"
+                    required
+                    placeholder="Your admin password"
+                    value={cleanPassword}
+                    onChange={(e) => setCleanPassword(e.target.value)}
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isCleaning || cleanPhrase !== 'CLEAN TEST DATA' || !cleanPassword}
+                    className="w-full bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3.5 rounded-xl font-bold transition-all flex justify-center items-center gap-2 shadow-sm cursor-pointer"
+                  >
+                    {isCleaning ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-5 h-5" />
+                    )}
+                    <span>Purge Test Data & Start Fresh</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
 
         </div>

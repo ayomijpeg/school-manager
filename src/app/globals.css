@@ -39,7 +39,7 @@
 
 /* 4. PRINT STYLES */
 @media print {
-  .no-print, nav, header, aside, button {
+  .no-print, nav, header, aside, button, input[type="checkbox"], .screen-only {
     display: none !important;
   }
 
@@ -48,14 +48,19 @@
     color: black !important;
     padding: 0 !important;
     margin: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  /* Force dark mode elements to look like white paper when printing */
-  .dark body, .dark * {
-    background-color: transparent !important;
-    color: black !important;
-    box-shadow: none !important;
-    border-color: #000 !important;
+  /* Retain rich backgrounds and branding colors for printable cards/documents */
+  .print-exact, .print-exact * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .id-card-item {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   section {

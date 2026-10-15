@@ -11,6 +11,7 @@ import {
   Mail,
   BookOpen,
   Calendar,
+  IdCard,
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
@@ -193,6 +194,13 @@ export default async function StudentDetailPage({
           className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 shadow-sm"
         >
           <FileText className="w-4 h-4" /> Report card
+        </Link>
+        <Link
+          href={`/dashboard/students/id-cards?studentId=${student.id}&autoPrint=true`}
+          className="inline-flex items-center gap-2 px-4 py-2.5 border border-emerald-300 bg-emerald-50 text-emerald-900 rounded-xl text-sm font-medium hover:bg-emerald-100 shadow-sm transition-colors"
+          title="Print official student ID card"
+        >
+          <IdCard className="w-4 h-4 text-emerald-700" /> Print ID Card
         </Link>
         {user.role === 'ADMIN' && pendingBalance > 0 && (
           <WhatsAppButton
