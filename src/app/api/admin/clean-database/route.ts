@@ -110,6 +110,9 @@ export async function POST(req: Request) {
         attendances: attendances.count,
         teachers: teacherUsersDeleted,
       };
+    }, {
+      maxWait: 20000,
+      timeout: 60000,
     });
 
     return NextResponse.json({

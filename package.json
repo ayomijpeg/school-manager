@@ -8,7 +8,7 @@
     "build": "prisma generate && next build --webpack",
     "start": "next start",
     "db-seed": "prisma db seed",
-    "db:clean": "node --env-file=.env scripts/clean-database.ts",
+    "db:clean": "npx tsx scripts/clean-database.ts",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest"

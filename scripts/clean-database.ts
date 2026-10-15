@@ -13,28 +13,16 @@ async function cleanDatabase() {
   console.log('       YOSOLA SCHOOLS - DATABASE CLEAN UTILITY      ');
   console.log('====================================================');
 
-  // 1. Count current records
-  const [
-    studentCount,
-    parentCount,
-    invoiceCount,
-    paymentCount,
-    resultCount,
-    attendanceCount,
-    promotionCount,
-    teacherCount,
-    adminCount,
-  ] = await Promise.all([
-    prisma.student.count(),
-    prisma.parent.count(),
-    prisma.invoice.count(),
-    prisma.payment.count(),
-    prisma.result.count(),
-    prisma.studentAttendance.count(),
-    prisma.promotionHistory.count(),
-    prisma.teacher.count(),
-    prisma.user.count({ where: { role: 'ADMIN' } }),
-  ]);
+  // 1. Count current records sequentially (prevents Neon serverless pool exhaustion)
+  const studentCount = await prisma.student.count();
+  const parentCount = await prisma.parent.count();
+  const invoiceCount = await prisma.invoice.count();
+  const paymentCount = await prisma.payment.count();
+  const resultCount = await prisma.result.count();
+  const attendanceCount = await prisma.studentAttendance.count();
+  const promotionCount = await prisma.promotionHistory.count();
+  const teacherCount = await prisma.teacher.count();
+  const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
 
   console.log('\n📊 Current Database Statistics:');
   console.log(`   - Students:           ${studentCount}`);
@@ -66,15 +54,12 @@ async function cleanDatabase() {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const backupFilePath = path.join(backupDir, `backup_before_clean_${timestamp}.json`);
 
-  const [allStudents, allParents, allInvoices, allPayments, allResults, config] =
-    await Promise.all([
-      prisma.student.findMany({ include: { level: true, user: true } }),
-      prisma.parent.findMany({ include: { user: true } }),
-      prisma.invoice.findMany({ include: { invoiceItems: true, payments: true } }),
-      prisma.payment.findMany(),
-      prisma.result.findMany(),
-      prisma.schoolConfig.findFirst(),
-    ]);
+  const allStudents = await prisma.student.findMany({ include: { level: true, user: true } });
+  const allParents = await prisma.parent.findMany({ include: { user: true } });
+  const allInvoices = await prisma.invoice.findMany({ include: { invoiceItems: true, payments: true } });
+  const allPayments = await prisma.payment.findMany();
+  const allResults = await prisma.result.findMany();
+  const config = await prisma.schoolConfig.findFirst();
 
   const backupData = {
     exportedAt: new Date().toISOString(),
@@ -130,6 +115,9 @@ async function cleanDatabase() {
       await tx.teacher.deleteMany();
       await tx.user.deleteMany({ where: { role: 'TEACHER' } });
     }
+  }, {
+    maxWait: 20000,
+    timeout: 60000,
   });
 
   console.log('✅ Cleanup completed successfully!');
