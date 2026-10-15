@@ -58,10 +58,10 @@ async function getStudents(query: string) {
 export default async function StudentListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ query?: string }>; 
+  searchParams: Promise<{ query?: string; search?: string }>; 
 }) {
-    const { query } = await searchParams; 
-    const searchQuery = query || '';
+    const { query, search } = await searchParams; 
+    const searchQuery = query || search || '';
     const { students, isTertiary, levels, currentYear } = await getStudents(searchQuery);
 
   return (

@@ -87,7 +87,7 @@ export default function Header({ schoolConfig, onMenuClick }: HeaderProps) {
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && globalQuery.trim()) {
-      router.push(`/dashboard/students?search=${encodeURIComponent(globalQuery)}`);
+      router.push(`/dashboard/students?query=${encodeURIComponent(globalQuery.trim())}`);
       setShowUserMenu(false);
     }
   };

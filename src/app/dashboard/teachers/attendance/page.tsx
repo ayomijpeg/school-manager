@@ -21,28 +21,70 @@ export default async function AttendanceHubPage() {
   }
   
   const userId = (payload.sub || payload.id) as string;
+  const userRole = (payload.role || '') as string;
+  const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
 
-  // 2. Fetch Teacher Profile
-  const teacher = await prisma.teacher.findUnique({
-    where: { userId },
-  });
+  interface AttendanceItem {
+    id: string;
+    class: { id: string; name: string; _count: { enrollments: number } };
+    course: { id: string; name: string } | null;
+  }
 
-  if (!teacher) return <div className="p-8">Teacher profile not found.</div>;
+  let allAssignments: AttendanceItem[] = [];
 
-  // 3. Fetch Assigned Classes (includes both General/Homeroom and Subject-based)
-  const allAssignments = await prisma.classAssignment.findMany({
-    where: { teacherId: teacher.id },
-    include: {
-      class: { include: { _count: { select: { enrollments: true } } } },
-      course: true,
+  if (isAdmin) {
+    const allClasses = await prisma.class.findMany({
+      include: {
+        _count: { select: { enrollments: true } },
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    allAssignments = allClasses.map((cls) => ({
+      id: cls.id,
+      class: cls,
+      course: null,
+    }));
+  } else {
+    // 2. Fetch Teacher Profile
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId },
+    });
+
+    if (!teacher) {
+      return (
+        <div className="max-w-4xl mx-auto p-8">
+          <div className="p-8 text-center border-2 border-amber-200 bg-amber-50 rounded-xl text-amber-800">
+            <h3 className="font-bold text-lg">Teacher Profile Not Found</h3>
+            <p className="text-sm mt-1">This user account is not linked to an active Teacher profile.</p>
+            <Link href="/dashboard" className="inline-block mt-4 text-sm font-medium text-emerald-800 underline">Back to dashboard</Link>
+          </div>
+        </div>
+      );
     }
-  });
+
+    // 3. Fetch Assigned Classes (includes both General/Homeroom and Subject-based)
+    allAssignments = await prisma.classAssignment.findMany({
+      where: { teacherId: teacher.id },
+      include: {
+        class: { include: { _count: { select: { enrollments: true } } } },
+        course: true,
+      }
+    });
+  }
 
   return (
     <div className="max-w-5xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Mark Attendance</h1>
-        <p className="text-gray-500">Take 30-second morning roll call or mark subject period attendance.</p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Mark Attendance</h1>
+          <p className="text-gray-500">Take 30-second morning roll call or mark subject period attendance.</p>
+        </div>
+        {isAdmin && (
+          <span className="self-start md:self-auto text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1.5 rounded-full uppercase tracking-wider">
+            Admin Oversight — All Classes
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

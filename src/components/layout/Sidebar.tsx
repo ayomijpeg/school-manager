@@ -66,6 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     { href: ROUTES.STUDENTS, label: 'Students', icon: GraduationCap },
     { href: ROUTES.TEACHERS, label: 'Teachers', icon: Users },
     { href: ROUTES.PARENTS, label: 'Parents', icon: UserCircle },
+    { href: ROUTES.ATTENDANCE, label: 'Attendance', icon: ClipboardCheck },
     { href: ROUTES.RESULT_ENTRY, label: 'Result Entry', icon: ClipboardList }, 
     { href: ROUTES.ADMIN_RESULTS, label: 'Broadsheet', icon: BarChart3 }, 
     { href: ROUTES.TIMETABLE, label: 'Timetable', icon: CalendarClock },

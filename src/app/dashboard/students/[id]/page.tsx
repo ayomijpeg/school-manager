@@ -184,7 +184,7 @@ export default async function StudentDetailPage({
       {/* Actions */}
       <div className="flex flex-wrap gap-3 mb-6 items-center">
         <Link
-          href="/dashboard/billing"
+          href={user.role === 'ADMIN' ? `/dashboard/finance?query=${encodeURIComponent(student.fullName)}` : '/dashboard/billing'}
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-800 text-white rounded-xl text-sm font-medium hover:bg-emerald-900 shadow-sm"
         >
           <Receipt className="w-4 h-4" /> View all invoices

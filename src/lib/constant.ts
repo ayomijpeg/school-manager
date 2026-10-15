@@ -33,7 +33,7 @@ export const ROUTES = {
   MY_RESULTS: '/dashboard/results', 
 
   // --- OPERATIONS ---
-  ATTENDANCE: '/dashboard/attendance',
+  ATTENDANCE: '/dashboard/teachers/attendance',
   TIMETABLE: '/dashboard/admin/timetable',
   FINANCE: '/dashboard/finance',
   BILLING: '/dashboard/billing',

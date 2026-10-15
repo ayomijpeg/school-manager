@@ -19,15 +19,22 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   if (!classData) return notFound();
 
   // 2. Resolve Effective Course (allows Morning Roll Call without forcing course selection)
+  const classCourses = await prisma.course.findMany({
+    where: { levelId: classData.levelId },
+    orderBy: { name: 'asc' }
+  });
+
   let effectiveCourseId = courseId;
   let courseName = '☀ Morning Roll Call';
 
   if (effectiveCourseId) {
-    const course = await prisma.course.findUnique({ where: { id: effectiveCourseId } });
+    const course = classCourses.find((c) => c.id === effectiveCourseId) 
+      || await prisma.course.findUnique({ where: { id: effectiveCourseId } });
     if (course) courseName = course.name;
   } else {
     // If homeroom/morning mode, pick level course or first available course in DB
-    const fallbackCourse = await prisma.course.findFirst({ where: { levelId: classData.levelId } })
+    const fallbackCourse = classCourses[0]
+      || await prisma.course.findFirst({ where: { levelId: classData.levelId } })
       || await prisma.course.findFirst();
     
     if (fallbackCourse) {
@@ -123,6 +130,38 @@ export default async function AttendancePage({ params, searchParams }: PageProps
           </button>
         </form>
       </div>
+
+      {/* Subject Selector Pills */}
+      {classCourses.length > 0 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-6 scrollbar-thin">
+          <Link
+            href={`/dashboard/teachers/attendance/${classId}?mode=morning${date ? `&date=${date}` : ''}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+              isMorning 
+                ? 'bg-purple-700 text-white shadow-sm' 
+                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            ☀ Morning Roll Call
+          </Link>
+          {classCourses.map((c) => {
+            const isSelected = !isMorning && effectiveCourseId === c.id;
+            return (
+              <Link
+                key={c.id}
+                href={`/dashboard/teachers/attendance/${classId}?courseId=${c.id}${date ? `&date=${date}` : ''}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                  isSelected 
+                    ? 'bg-emerald-700 text-white shadow-sm' 
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {c.name}
+              </Link>
+            );
+          })}
+        </div>
+      )}
 
       <AttendanceRegister 
         classId={classId} 

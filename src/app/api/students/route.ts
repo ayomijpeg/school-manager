@@ -73,12 +73,31 @@ export async function POST(request: Request) {
 
     const result = await prisma.$transaction(async (tx) => {
       
-      const activeSession = await tx.academicSession.findFirst({
+      let activeSession = await tx.academicSession.findFirst({
         where: { isCurrent: true }
       });
       
       if (!activeSession) {
-        throw new Error("No Active Academic Session found.");
+        activeSession = await tx.academicSession.findFirst({
+          orderBy: { createdAt: 'desc' }
+        });
+      }
+
+      if (!activeSession) {
+        const config = await tx.schoolConfig.findFirst();
+        const code = config?.academicYear || `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`;
+        activeSession = await tx.academicSession.upsert({
+          where: { code },
+          create: {
+            code,
+            isCurrent: true,
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          },
+          update: {
+            isCurrent: true,
+          }
+        });
       }
 
       const emailToUse = data.email && data.email.length > 0 

@@ -44,6 +44,9 @@ export default async function MyClassesPage() {
   }
 
   if (!teacher) {
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+      redirect('/dashboard/admin/classes');
+    }
     return (
       <div className="max-w-6xl mx-auto p-6">
         <div className="p-8 text-center border-2 border-red-100 bg-red-50 rounded-xl text-red-600">

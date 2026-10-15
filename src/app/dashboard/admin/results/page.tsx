@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal'; 
-import { Layers, FileBadge, Search, Printer, Trophy } from 'lucide-react';
+import { Layers, FileBadge, Search, Printer, Trophy, FileSpreadsheet } from 'lucide-react';
 
 // --- TYPES ---
 interface SubjectResult {
@@ -44,12 +44,41 @@ const getGradeColor = (grade: string) => {
 
 // --- COMPONENT: THE REPORT CARD PREVIEW (MOVED OUTSIDE TO FIX ESLINT) ---
 const ReportCardView = ({ student }: { student: StudentReport }) => (
-  <div className="bg-white p-4 max-w-2xl mx-auto text-slate-900">
-    {/* Header */}
-    <div className="text-center border-b-2 border-slate-900 pb-4 mb-6">
-      <h2 className="text-2xl font-black uppercase">Yosola Schools</h2>
-      <p className="text-sm font-bold text-slate-500 uppercase">Official Terminal Report</p>
-    </div>
+  <div className="relative">
+    <style jsx global>{`
+      @media print {
+        @page {
+          size: A4 portrait;
+          margin: 12mm;
+        }
+        body * {
+          visibility: hidden !important;
+        }
+        #official-terminal-report,
+        #official-terminal-report * {
+          visibility: visible !important;
+        }
+        #official-terminal-report {
+          position: fixed !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: white !important;
+          z-index: 999999 !important;
+        }
+        .no-print {
+          display: none !important;
+        }
+      }
+    `}</style>
+    <div id="official-terminal-report" className="bg-white p-6 max-w-2xl mx-auto text-slate-900 border border-slate-200 rounded-xl print:border-none print:p-0 print:m-0 print:max-w-none print:w-full">
+      {/* Header */}
+      <div className="text-center border-b-2 border-slate-900 pb-4 mb-6">
+        <h2 className="text-2xl font-black uppercase tracking-wider text-slate-900">Yosola Schools</h2>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">Official Student Terminal Report</p>
+      </div>
 
     {/* Student Details */}
     <div className="grid grid-cols-2 gap-4 text-sm mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
@@ -144,6 +173,7 @@ const ReportCardView = ({ student }: { student: StudentReport }) => (
        <Button icon={Printer} onClick={() => window.print()}>Print Report</Button>
     </div>
   </div>
+</div>
 );
 
 export default function AdminResultsPage() {
@@ -180,6 +210,59 @@ export default function AdminResultsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleExportCsv = () => {
+    if (!reportData || reportData.length === 0) return;
+
+    // Collect all unique subjects across students
+    const subjectNames = Array.from(
+      new Set(
+        reportData.flatMap((s) => s.results.map((r) => r.course.name))
+      )
+    );
+
+    // Build CSV Headers
+    const headers = [
+      'Rank',
+      'Student Name',
+      'Admission No',
+      'Level',
+      ...subjectNames.map((subj) => `"${subj} (CA/Exam/Total)"`),
+      'Subject Count',
+      'Total Score',
+      'Average (%)',
+    ];
+
+    // Build CSV Rows
+    const rows = reportData.map((s, index) => {
+      const subjectMap = new Map(s.results.map((r) => [r.course.name, `${r.caScore}/${r.examScore}/${r.totalScore}(${r.grade})`]));
+      const subjectCols = subjectNames.map((subj) => subjectMap.get(subj) || '-');
+
+      return [
+        index + 1,
+        `"${s.fullName.replace(/"/g, '""')}"`,
+        `"${s.matricNumber || ''}"`,
+        `"${s.level?.name || ''}"`,
+        ...subjectCols.map((c) => `"${c}"`),
+        s.summary.subjectCount,
+        s.summary.totalScore,
+        `"${s.summary.average}%"`,
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const levelName = levels?.find((l) => l.id === selectedLevel)?.name || 'Class';
+    const examName = exams?.find((e) => e.id === selectedExam)?.name || 'Exam';
+    link.href = url;
+    link.download = `Broadsheet_${levelName}_${examName}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -222,9 +305,16 @@ export default function AdminResultsPage() {
            </select>
         </div>
         
-        <Button onClick={handleSearch} icon={Search} isLoading={isLoading}>
-            Load Broadsheet
-        </Button>
+        <div className="flex gap-2 w-full md:w-auto">
+          <Button onClick={handleSearch} icon={Search} isLoading={isLoading}>
+              Load Broadsheet
+          </Button>
+          {reportData.length > 0 && (
+            <Button onClick={handleExportCsv} icon={FileSpreadsheet} variant="secondary">
+              Export CSV
+            </Button>
+          )}
+        </div>
       </div>
 
       {reportData.length > 0 ? (
