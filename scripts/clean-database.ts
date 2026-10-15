@@ -111,16 +111,19 @@ async function cleanDatabase() {
     await tx.promotionHistory.deleteMany();
     await tx.enrollment.deleteMany();
 
-    // 3.3 Relationships & Students
+    // 3.3 Relationships & Students (Purges students, their photos, and student login accounts)
     await tx.parentStudentLink.deleteMany();
     await tx.student.deleteMany();
     await tx.user.deleteMany({ where: { role: 'STUDENT' } });
 
-    // 3.4 Parents
-    await tx.parent.deleteMany();
-    await tx.user.deleteMany({ where: { role: 'PARENT' } });
+    // 3.4 Parents (Preserved by default; only purged if explicitly requested)
+    const wipeParents = args.includes('--include-parents');
+    if (wipeParents) {
+      await tx.parent.deleteMany();
+      await tx.user.deleteMany({ where: { role: 'PARENT' } });
+    }
 
-    // 3.5 Optional: Teachers
+    // 3.5 Teachers (Preserved by default; only purged if explicitly requested)
     if (wipeTeachers) {
       await tx.classAssignment.deleteMany();
       await tx.timetableSlot.deleteMany();

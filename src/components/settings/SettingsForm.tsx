@@ -479,9 +479,10 @@ export default function SettingsForm({ initialData }: SettingsFormProps) {
                     </p>
                     <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-700 dark:text-slate-300">
                       <li>Administrator login account</li>
-                      <li>School name, bank details, & motto</li>
-                      <li>Academic session & term setup</li>
-                      <li>Class, Level, & Course structures</li>
+                      <li>School configuration, fees, & bank info</li>
+                      <li>All Classes, Levels, & Subject structures</li>
+                      <li>Teacher staff profiles & schedules</li>
+                      <li>Parent guardian accounts</li>
                     </ul>
                   </div>
                   <div className="bg-white/80 dark:bg-slate-900/80 p-3 rounded-xl border border-amber-200/60 dark:border-amber-900/30">
@@ -489,10 +490,10 @@ export default function SettingsForm({ initialData }: SettingsFormProps) {
                       🗑️ Cleaned for Fresh Start:
                     </p>
                     <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-700 dark:text-slate-300">
-                      <li>All 242 mock student records</li>
-                      <li>All mock parent profiles & logins</li>
-                      <li>All test invoices & payment receipts</li>
-                      <li>All test attendance & report records</li>
+                      <li>All student records & uploaded photos</li>
+                      <li>Student login accounts</li>
+                      <li>All invoices, invoice items, & receipts</li>
+                      <li>Student attendance & test results</li>
                     </ul>
                   </div>
                 </div>

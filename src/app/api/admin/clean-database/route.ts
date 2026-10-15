@@ -84,8 +84,13 @@ export async function POST(req: Request) {
       const parentLinks = await tx.parentStudentLink.deleteMany();
       const students = await tx.student.deleteMany();
       const studentUsers = await tx.user.deleteMany({ where: { role: 'STUDENT' } });
-      const parents = await tx.parent.deleteMany();
-      const parentUsers = await tx.user.deleteMany({ where: { role: 'PARENT' } });
+      
+      let parentsDeleted = 0;
+      if (body.includeParents) {
+        const parents = await tx.parent.deleteMany();
+        const parentUsers = await tx.user.deleteMany({ where: { role: 'PARENT' } });
+        parentsDeleted = parents.count;
+      }
 
       let teacherUsersDeleted = 0;
       if (includeTeachers) {
@@ -98,7 +103,7 @@ export async function POST(req: Request) {
 
       return {
         students: students.count,
-        parents: parents.count,
+        parents: parentsDeleted,
         invoices: invoices.count,
         payments: payments.count,
         results: results.count,
