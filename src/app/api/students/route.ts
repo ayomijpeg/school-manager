@@ -16,6 +16,7 @@ const createStudentSchema = z.object({
   departmentId: z.string().uuid().optional(),    
   dateOfBirth: z.string().optional(), 
   contactPhone: z.string().optional(),
+  photoUrl: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE']).optional(),
 });
 
@@ -104,6 +105,7 @@ export async function POST(request: Request) {
           departmentId: data.departmentId, 
           dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
           contactPhone: data.contactPhone,
+          photoUrl: data.photoUrl || null,
         },
       });
 

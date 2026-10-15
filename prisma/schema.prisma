@@ -84,6 +84,7 @@ model Student {
   matricNumber      String?             @unique
   dateOfBirth       DateTime?
   contactPhone      String?
+  photoUrl          String?
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   levelId           String?

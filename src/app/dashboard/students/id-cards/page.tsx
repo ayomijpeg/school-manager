@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation';
 import { ArrowLeft, Printer, IdCard, Layers, ShieldCheck, User } from 'lucide-react';
 import RefreshButton from '@/components/ui/RefreshButton';
 import PrintButton from '@/components/ui/PrintButton';
+import StudentPhotoUpload from '@/components/students/StudentPhotoUpload';
 
 type SearchParams = Promise<{ levelId?: string; query?: string }>;
 
@@ -160,13 +161,28 @@ export default async function StudentIdCardsPage({
                 {/* CARD BODY: PHOTO + DETAILS */}
                 <div className="flex gap-3 items-center mb-3">
                   {/* PASSPORT PHOTO */}
-                  <div className="w-16 h-20 bg-slate-100 border-2 border-emerald-600 rounded-lg flex flex-col items-center justify-center text-slate-400 shrink-0 relative overflow-hidden">
-                    <div className="w-full h-full bg-gradient-to-b from-slate-50 to-emerald-50 flex items-center justify-center font-bold text-xl text-emerald-800 font-serif">
-                      {student.fullName.substring(0, 2).toUpperCase()}
-                    </div>
-                    <span className="absolute bottom-0 inset-x-0 bg-slate-900/80 text-[7px] text-white text-center py-0.5 uppercase tracking-tighter">
+                  <div className="w-16 h-20 bg-slate-100 border-2 border-emerald-600 rounded-lg flex flex-col items-center justify-center text-slate-400 shrink-0 relative overflow-hidden group">
+                    {student.photoUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={student.photoUrl}
+                        alt={student.fullName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-b from-slate-50 to-emerald-50 flex items-center justify-center font-bold text-xl text-emerald-800 font-serif">
+                        {student.fullName.substring(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="absolute bottom-0 inset-x-0 bg-slate-900/80 text-[7px] text-white text-center py-0.5 uppercase tracking-tighter z-10">
                       OFFICIAL
                     </span>
+                    <StudentPhotoUpload
+                      studentId={student.id}
+                      studentName={student.fullName}
+                      currentPhoto={student.photoUrl}
+                      variant="overlay"
+                    />
                   </div>
 
                   {/* DETAILS */}

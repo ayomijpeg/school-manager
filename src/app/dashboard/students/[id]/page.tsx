@@ -17,6 +17,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import WhatsAppButton from '@/components/ui/WhatsAppButton';
 import { buildFeeReminderMessage, buildGeneralMessage } from '@/lib/whatsapp';
 import { ShieldCheck, Phone } from 'lucide-react';
+import StudentPhotoUpload from '@/components/students/StudentPhotoUpload';
 
 export default async function StudentDetailPage({
   params,
@@ -107,14 +108,35 @@ export default async function StudentDetailPage({
       {/* Profile card */}
       <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm mb-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-2xl font-serif font-bold text-emerald-800 border border-emerald-200">
-            {student.fullName.substring(0, 2).toUpperCase()}
+          <div className="w-20 h-20 bg-emerald-100 rounded-2xl flex items-center justify-center text-2xl font-serif font-bold text-emerald-800 border-2 border-emerald-600/30 overflow-hidden relative shrink-0 shadow-inner">
+            {student.photoUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={student.photoUrl}
+                alt={student.fullName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              student.fullName.substring(0, 2).toUpperCase()
+            )}
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-serif font-bold text-slate-900">{student.fullName}</h1>
-            {student.matricNumber && (
-              <p className="text-sm font-mono text-slate-500 mt-0.5">{student.matricNumber}</p>
-            )}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h1 className="text-2xl font-serif font-bold text-slate-900">{student.fullName}</h1>
+                {student.matricNumber && (
+                  <p className="text-sm font-mono text-slate-500 mt-0.5">{student.matricNumber}</p>
+                )}
+              </div>
+              {user.role === 'ADMIN' && (
+                <StudentPhotoUpload
+                  studentId={student.id}
+                  studentName={student.fullName}
+                  currentPhoto={student.photoUrl}
+                  variant="button"
+                />
+              )}
+            </div>
             <div className="flex flex-wrap gap-3 mt-3">
               {student.level && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-100 text-sm text-slate-600">
